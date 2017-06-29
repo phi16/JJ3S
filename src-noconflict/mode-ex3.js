@@ -29,6 +29,13 @@ var Ex3HighlightRules = function() {
             regex : "'.*?'"
         }, {
             token : "constant.language",
+            regex : "CHR\\b",
+            next : [
+                { token : "string", regex : " .", next: "start" },
+                { defaultToken : "identifier" }
+            ]
+        }, {
+            token : "constant.language",
             regex : "HEX\\b",
             next : [
                 { token : "constant.numeric", regex : "[+-]?(?:\\d|[A-F])+(?:(?:\\.(?:\\d|[A-F])*)?(?:[eE][+-]?\\d+)?)?\\b", next: "start" },

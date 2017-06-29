@@ -152,7 +152,7 @@ ex3.exec = log=>{
   let steps = 0;
   function display(){
     let str = "";
-    str += clocks + "CLK, " + steps + "STEP\n";
+    str += steps + "STEP, " + clocks + "CLK\n";
     str += "PC=" + hex3(pc) + " (L" + aux[pc] + ", " + srcs[aux[pc]-1] + "), ";
     str += "AC=" + ac + " (" + hex4(ac) + "), E=" + e + "\n\n";
     Object.keys(store).forEach(s=>{
@@ -212,7 +212,7 @@ ex3.exec = log=>{
         case 0x3000 /* STA */ : mem[ar]=ac;break;
         case 0x4000 /* BUN */ : pc=ar;break;
         case 0x5000 /* BSA */ : mem[ar]=pc;pc=ar+1;dur++;break;
-        case 0x6000 /* ISZ */ : {mem[ar]++;mem[ar]&=0xffff;if(mem[ar]==0)pc++;}dur++;break;
+        case 0x6000 /* ISZ */ : {mem[ar]++;mem[ar]&=0xffff;if(mem[ar]==0)pc++;}dur+=2;break;
       }
       return Q.pure(dur);
     }
@@ -221,6 +221,7 @@ ex3.exec = log=>{
   halter = Q.emptyBox();
   breaker = Q.newBox(0);
   stepper = exe=>Q.do(function*(){
+    if(halt)return;
     if(exe){
       clocks += yield oneStep;
       steps++;
