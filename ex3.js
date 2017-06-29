@@ -71,6 +71,7 @@ ex3.load = (src,log)=>{
       else if(token=="TRS")setLine(), buffer[curAddr++] = 0xF100;
       else if(token=="ROT")setLine(), buffer[curAddr++] = 0xF080;
       else if(token=="BTN")setLine(), buffer[curAddr++] = 0xF040;
+      else if(token=="SLP")setLine(), buffer[curAddr++] = 0xF020;
       else if(token=="INP")log("Deprecated: " + token),curAddr++,failed = true;
       else if(token=="OUT")log("Deprecated: " + token),curAddr++,failed = true;
       else if(token=="SKI")log("Deprecated: " + token),curAddr++,failed = true;
@@ -194,6 +195,7 @@ ex3.exec = log=>{
         case 0xF100 /* TRS */ : break;
         case 0xF080 /* ROT */ : break;
         case 0xF040 /* BTN */ : break;
+        case 0xF020 /* SLP */ : break;
         default: toastr.error("Invalid instruction: " + hex4(op));halt=true;break;
       }
       return Q.pure(4);

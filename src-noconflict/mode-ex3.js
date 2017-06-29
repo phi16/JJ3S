@@ -8,7 +8,7 @@ var Ex3HighlightRules = function() {
     var defIns = "AND|ADD|LDA|STA|BUN|BSA|ISZ|CLA|CLE|CMA|CME|CIR|CIL|INC|SPA|SNA|SZA|SZE|HLT";
     var valIns = "HEX|DEC|CHR|SYM|ORG|END|I"
     var depIns = "INP|OUT|SKI|SKO|ION|IOF|SIO|PIO|IMK";
-    var newIns = "SEG|SPR|WRT|TRS|ROT|BTN";
+    var newIns = "SEG|SPR|WRT|TRS|ROT|BTN|SLP";
 
     var keywordMapper = this.createKeywordMapper({
         "support.function": newIns,
