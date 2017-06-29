@@ -149,6 +149,7 @@ ex3.exec = log=>{
   let pc = 0x010;
   let ac = 0;
   let e = 0;
+  let seg = 0;
 
   let clocks = 0;
   let steps = 0;
@@ -156,7 +157,9 @@ ex3.exec = log=>{
     let str = "";
     str += steps + "STEP, " + clocks + "CLK\n";
     str += "PC=" + hex3(pc) + " (L" + aux[pc] + ", " + srcs[aux[pc]-1] + "), ";
-    str += "AC=" + ac + " (" + hex4(ac) + "), E=" + e + "\n\n";
+    str += "AC=" + ac + " (" + hex4(ac) + "), E=" + e + "\n";
+    str += "SEG[" + hex4(seg) + "]";
+    str += "\n\n";
     Object.keys(store).forEach(s=>{
       let ad = store[s].v;
       let v = mem[ad];
@@ -190,7 +193,7 @@ ex3.exec = log=>{
         case 0x7004 /* SZA */ : {if(ac==0)pc++;}break;
         case 0x7002 /* SZE */ : {if(e==0)pc++;}break;
         case 0x7001 /* HLT */ : halt=true;break;
-        case 0xF800 /* SEG */ : break;
+        case 0xF800 /* SEG */ : seg=ac;break;
         case 0xF400 /* SPR */ : break;
         case 0xF200 /* WRT */ : break;
         case 0xF100 /* TRS */ : break;
