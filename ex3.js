@@ -15,6 +15,9 @@ let aux = [];
 let labels = {};
 let addrs = {};
 let store = [];
+ex3.ready = _=>{
+  return buffer.length!=0;
+};
 ex3.load = (src,log)=>{
   ex3.halt();
   srcs = src.split('\n').map(l=>l.split('/')[0].replace(/\t|\r/g,"").replace(/^ */,"").replace(/ *$/,""));
@@ -139,9 +142,7 @@ let halter = null;
 let breaker = null;
 let stepper = null;
 ex3.exec = log=>{
-  if(buffer.length==0){
-    return;
-  }
+  if(!ex3.ready())return;
   const mem = buffer.concat([]);
   let halt = false;
 

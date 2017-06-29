@@ -146,6 +146,7 @@ $(_=>{
   const execBtn = document.getElementById("exec");
   const stepBtn = document.getElementById("step");
   execBtn.addEventListener("click",_=>{
+    if(!ex3.ready())return;
     if(!running){
       ex3.exec(txt=>{
         writeLog(txt);
@@ -166,6 +167,7 @@ $(_=>{
     }
   });
   stepBtn.addEventListener("click",_=>{
+    if(!ex3.ready())return;
     if(!running){
       ex3.exec(txt=>{
         writeLog(txt);
