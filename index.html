@@ -7,23 +7,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet"/>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.min.js"></script>
+    <script type="text/javascript" src="Q.js"></script>
     <style type="text/css" media="screen">
-body {
-  overflow: hidden;
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-}
-#editor {
-  margin: 0;
-  width: 50%;
-}
-#display {
-  margin: 0;
-  width: 50%;
-  border-left: 3px solid #141411;
-}
 ::-webkit-scrollbar {
     width: 0.5em;
 }
@@ -43,21 +28,88 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(100, 100, 100, 1.0);
 }
+body {
+  overflow: hidden;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+}
+#editor {
+  margin: 0;
+  width: 50%;
+}
+#display {
+  margin: 0;
+  width: 50%;
+  height: 100%;
+  border-left: 3px solid #141411;
+  background: #222;
+  display: flex;
+  flex-direction: column;
+}
+#canvas {
+  margin-left: 5px;
+  margin-top: 5px;
+  border: 3px solid #777;
+  border-radius: 3px;
+  width: 320px;
+  height: 240px;
+}
+#exec {
+  margin-left: 5px;
+  margin-top: 10px;
+  width: 80px;
+  height: 40px;
+  font-size: 15px;
+}
+#step {
+  margin-left: 5px;
+  margin-top: 10px;
+  width: 80px;
+  height: 40px;
+  font-size: 15px;
+}
+#log {
+  margin-left: 15px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  overflow-y: scroll;
+  width: 100%;
+  font-size: 15px;
+  color: #FFF;
+}
     </style>
   </head>
   <body>
     <pre id="editor"></pre>
     <div id="display">
-      <canvas id="canvas" width="640" height="480">
+      <canvas id="canvas" width="640" height="480"></canvas>
+      <div style="flex-direction:row">
+        <button type="button" id="exec">Execute</button>
+        <button type="button" id="step">Debug</button>
+      </div>
+      <div id="log">
+      </div>
     </div>
     <script src="src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="ex3.js" type="text/javascript" charset="utf-8"></script>
     <script>
 let vim,emacs;
 $(_=>{
-  let clear = _=>_;
+  const logElem = document.getElementById("log");
+  let reset = _=>_;
+  function writeLog(txt){
+    logElem.innerText = txt;
+  }
   function srcUpdate(src){
+    reset();
     localStorage.setItem('src',src);
-    console.log(src); // TODO
+    let logs = "";
+    ex3.load(src,txt=>{
+      logs += txt + "\n";
+    });
+    writeLog(logs);
   }
   var editor = ace.edit("editor");
   editor.setTheme("ace/theme/monokai");
@@ -66,6 +118,7 @@ $(_=>{
   const initSource = localStorage.getItem('src');
   if(initSource){
     editor.session.getDocument().setValue(initSource);
+    srcUpdate(initSource);
   }
   let editTimer = null;
   editor.on('change',_=>{
@@ -73,8 +126,7 @@ $(_=>{
     editTimer = setTimeout(_=>{
       let content = editor.session.getDocument().getValue();
       srcUpdate(content);
-      clear();
-    },2000);
+    },100);
   });
   vim = _=>{editor.setKeyboardHandler("ace/keyboard/vim");localStorage.setItem('inputMethod',"vim");}
   emacs = _=>{editor.setKeyboardHandler("ace/keyboard/emacs");localStorage.setItem('inputMethod',"emacs");}
@@ -83,6 +135,65 @@ $(_=>{
     if(im=="vim")vim();
     else if(im=="emacs")emacs();
   }
+
+  const cvs = document.getElementById("canvas");
+  const ctx = cvs.getContext('2d');
+  ctx.fillStyle = "rgb(255,128,0)";
+  ctx.fillRect(0,0,640,480);
+
+  let running = false;
+  let breaking = false;
+  const execBtn = document.getElementById("exec");
+  const stepBtn = document.getElementById("step");
+  execBtn.addEventListener("click",_=>{
+    if(!running){
+      ex3.exec(txt=>{
+        writeLog(txt);
+      });
+      running = true;
+      breaking = false;
+      execBtn.textContent = "Halt";
+      stepBtn.textContent = "Break";
+    }else{
+      if(!breaking){
+        reset();
+      }else{
+        ex3.resume();
+        breaking = false;
+        execBtn.textContent = "Halt";
+        stepBtn.textContent = "Break";
+      }
+    }
+  });
+  stepBtn.addEventListener("click",_=>{
+    if(!running){
+      ex3.exec(txt=>{
+        writeLog(txt);
+      });
+      ex3.break();
+      running = true;
+      breaking = true;
+      execBtn.textContent = "Resume";
+      stepBtn.textContent = "Step";
+      return;
+    }
+    if(!breaking){
+      ex3.break();
+      breaking = true;
+      execBtn.textContent = "Resume";
+      stepBtn.textContent = "Step";
+    }else{
+      ex3.step();
+    }
+  });
+  reset = _=>{
+    ex3.halt();
+    running = false;
+    breaking = false;
+    execBtn.textContent = "Execute";
+    stepBtn.textContent = "Debug";
+    writeLog("Ready.");
+  };
 });
     </script>
   </body>

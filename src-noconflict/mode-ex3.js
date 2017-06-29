@@ -8,12 +8,12 @@ var Ex3HighlightRules = function() {
     var defIns = "AND|ADD|LDA|STA|BUN|BSA|ISZ|CLA|CLE|CMA|CME|CIR|CIL|INC|SPA|SNA|SZA|SZE|HLT";
     var valIns = "HEX|DEC|CHR|SYM|ORG|END|I"
     var depIns = "INP|OUT|SKI|SKO|ION|IOF|SIO|PIO|IMK";
-    var newIns = "SEG|SPR|WRT|TRS|ROT";
+    var newIns = "SEG|SPR|WRT|TRS|ROT|BTN";
 
     var keywordMapper = this.createKeywordMapper({
         "support.function": newIns,
-        "comment" : depIns,
-        "keyword": defIns,
+        "variable.language" : defIns,
+        "keyword": depIns,
         "constant.language": valIns,
     }, "identifier", true);
 
