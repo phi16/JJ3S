@@ -382,9 +382,6 @@ H,  DEC 30`);
 @if ($1>=$2) goto $3 = LDA $2; CMA; INC; ADD $1; SPA; BUN $3
 @if ($1<$2) goto $3 = LDA $2; CMA; INC; ADD $1; SNA; BUN $3`);
   }
-  if(initSource && initMacro)srcUpdate(initSource,initMacro);
-  else if(initSource)srcUpdate(initSource,"");
-  else if(initMacro)srcUpdate("",initMacro);
 
   let editTimer = null;
   let editHandler = _=>{
@@ -395,6 +392,7 @@ H,  DEC 30`);
       srcUpdate(srcCon,macroCon);
     },300);
   };
+  editHandler();
   editor.on('change',editHandler);
   macroEditor.on('change',editHandler);
   vim = _=>{editor.setKeyboardHandler("ace/keyboard/vim");macroEditor.setKeyboardHandler("ace/keyboard/vim");localStorage.setItem('inputMethod',"vim");}
