@@ -241,11 +241,12 @@ $(_=>{
   function writeMem(txt){
     memElem.innerText = txt;
   }
-  function srcUpdate(src){
+  function srcUpdate(src,macro){
     reset();
     localStorage.setItem('src',src);
+    localStorage.setItem('macro',macro);
     let logs = "";
-    ex3.load(src,txt=>{
+    ex3.load(src,macro,txt=>{
       logs += txt + "\n";
     });
     writeLog(logs);
@@ -265,16 +266,26 @@ $(_=>{
   const initSource = localStorage.getItem('src');
   if(initSource){
     editor.session.getDocument().setValue(initSource);
-    srcUpdate(initSource);
   }
+  const initMacro = localStorage.getItem('macro');
+  if(initMacro){
+    macroEditor.session.getDocument().setValue(initMacro);
+  }
+  if(initSource && initMacro)srcUpdate(initSource,initMacro);
+  else if(initSource)srcUpdate(initSource,"");
+  else if(initMacro)srcUpdate("",initMacro);
+
   let editTimer = null;
-  editor.on('change',_=>{
+  let editHandler = _=>{
     if(editTimer)clearTimeout(editTimer);
     editTimer = setTimeout(_=>{
-      let content = editor.session.getDocument().getValue();
-      srcUpdate(content);
-    },100);
-  });
+      let srcCon = editor.session.getDocument().getValue();
+      let macroCon = macroEditor.session.getDocument().getValue();
+      srcUpdate(srcCon,macroCon);
+    },300);
+  };
+  editor.on('change',editHandler);
+  macroEditor.on('change',editHandler);
   vim = _=>{editor.setKeyboardHandler("ace/keyboard/vim");macroEditor.setKeyboardHandler("ace/keyboard/vim");localStorage.setItem('inputMethod',"vim");}
   emacs = _=>{editor.setKeyboardHandler("ace/keyboard/emacs");macroEditor.setKeyboardHandler("ace/keyboard/emacs");localStorage.setItem('inputMethod',"emacs");}
   const im = localStorage.getItem('inputMethod');
@@ -311,7 +322,7 @@ $(_=>{
   const stepBtn = document.getElementById("step");
   const statMsg = document.getElementById("status");
   execBtn.addEventListener("click",_=>{
-    stepBtn.style.visibility = "visible";
+    stepBtn.style.display = "";
     if(!ex3.ready())return;
     if(done){
       reset();
@@ -340,7 +351,7 @@ $(_=>{
     if(!ex3.ready())return;
     if(done){
       reset();
-      stepBtn.style.visibility = "visible";
+      stepBtn.style.display = "";
       return;
     }
     if(!running){
@@ -380,7 +391,7 @@ $(_=>{
     breaking = false;
     done = true;
     execBtn.textContent = "Done";
-    stepBtn.style.visibility = "hidden";
+    stepBtn.style.display = "none";
   };
   ex3.onCrash = _=>{
     statMsg.textContent = "Crashed.";
@@ -388,7 +399,7 @@ $(_=>{
     breaking = false;
     done = true;
     execBtn.textContent = "Done";
-    stepBtn.style.visibility = "hidden";
+    stepBtn.style.display = "none";
   };
   ex3.onBreak = _=>{
     breaking = true;

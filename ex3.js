@@ -20,7 +20,7 @@ let breaks = {}; // breakpoints
 ex3.ready = _=>{
   return buffer.length!=0;
 };
-ex3.load = (src,log)=>{
+ex3.load = (src,macro,log)=>{
   ex3.halt();
   srcs = src.split('\n').map(l=>l.split('/')[0].replace(/\t|\r/g,"").replace(/^ */,"").replace(/ *$/,""));
   const ls = srcs.join(" \n ").replace(/,/g," , ").split(" ").filter(x=>x!="");
@@ -225,7 +225,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
     str = "";
     str += steps + "STEP, " + clocks + "CLK\n";
     str += "PC=" + hex3(pc) + " (" + hex4(mem[pc]) + ", " + insn(mem[pc]) + ")\n";
-    str += "L" + aux[pc] + ", " + srcs[aux[pc]-1] + "\n\n";
+    str += "L" + aux[pc] + ": " + srcs[aux[pc]-1] + "\n\n";
     str += "AC=" + ac + " (" + hex4(ac) + "), E=" + e + "\n";
     str += "SEG[" + hex4(seg) + "]";
     logDisp(str);
@@ -331,6 +331,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
         yield Q.takeBox(breaker);
         yield stepper(false);
         ex3.onBreak();
+        yield Q.readBox(breaker);
       }
     }
     display();
