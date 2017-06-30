@@ -48,6 +48,9 @@ var Ex3HighlightRules = function() {
             token : "keyword",
             regex : "BREAK\\b"
         }, {
+            token : "string",
+            regex : "\\$."
+        }, {
             token : keywordMapper,
             regex : "(?:I|[A-Z]{3})\\b"
         }, {
