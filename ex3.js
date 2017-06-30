@@ -80,15 +80,15 @@ ex3.load = (src,log)=>{
       else if(token=="ROT")setLine(), buffer[curAddr++] = 0xF020;
       else if(token=="BTN")setLine(), buffer[curAddr++] = 0xF010;
       else if(token=="SLP")setLine(), buffer[curAddr++] = 0xF008;
-      else if(token=="INP")log("Deprecated: " + token),curAddr++,failed = true;
-      else if(token=="OUT")log("Deprecated: " + token),curAddr++,failed = true;
-      else if(token=="SKI")log("Deprecated: " + token),curAddr++,failed = true;
-      else if(token=="SKO")log("Deprecated: " + token),curAddr++,failed = true;
-      else if(token=="ION")log("Deprecated: " + token),curAddr++,failed = true;
-      else if(token=="IOF")log("Deprecated: " + token),curAddr++,failed = true;
-      else if(token=="SIO")log("Deprecated: " + token),curAddr++,failed = true;
-      else if(token=="PIO")log("Deprecated: " + token),curAddr++,failed = true;
-      else if(token=="IMK")log("Deprecated: " + token),curAddr++,failed = true;
+      else if(token=="INP")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
+      else if(token=="OUT")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
+      else if(token=="SKI")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
+      else if(token=="SKO")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
+      else if(token=="ION")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
+      else if(token=="IOF")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
+      else if(token=="SIO")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
+      else if(token=="PIO")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
+      else if(token=="IMK")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
       else if(token=="END"){
         return;
       }else if(token=="\n"){
@@ -96,7 +96,7 @@ ex3.load = (src,log)=>{
       }else if(token=="BREAK"){
         breaks[curAddr] = true;
       }else if(token=="ASSERT"){
-        console.log("po");
+        console.log("po"); // TODO
       }else{
         const mrefOp = ["AND","ADD","LDA","STA","BUN","BSA","ISZ"];
         let ix = mrefOp.indexOf(token);
@@ -108,7 +108,7 @@ ex3.load = (src,log)=>{
           setLine();
           buffer[curAddr++] = {delay:value, memory:label};
         }else{
-          log("Ignored: " + token);
+          log("L" + lineNum + ": Ignored '" + token + "'");
           failed = true;
         }
       }
@@ -139,6 +139,10 @@ ex3.load = (src,log)=>{
   for(let i=0;i<buffer.length;i++){
     if(buffer[i].delay!==undefined){
       const addr = labels[buffer[i].memory];
+      if(addr==undefined){
+        failed = true;
+        log("L" + aux[i] + ": Label not found '" + buffer[i].memory + "'");
+      }
       buffer[i] = buffer[i].delay + addr;
     }
     //console.log(hex3(i),hex4(buffer[i]));
@@ -171,6 +175,8 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
 
   let clocks = 0;
   let steps = 0;
+  let frameWait = 0;
+  const maxFrames = 800 * 480;
   function insn(x){
     const opName = {
       0x7800:"CLA",
@@ -241,7 +247,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
     render(field);
   }
 
-  const oneStep = Q.do(function*(){
+  function oneStep(){
     const op = mem[pc];
     const ty = op&0x7000;
     if(ty==0x7000){
@@ -270,7 +276,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
         case 0xF008 /* SLP */ : break;
         default: toastr.error("Invalid instruction: " + hex4(op));halt=true;ex3.onCrash();break;
       }
-      return Q.pure(4);
+      return 4;
     }else{
       let dur = 5;
       let ar;
@@ -288,31 +294,38 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
         case 0x5000 /* BSA */ : mem[ar]=pc;pc=ar+1;dur++;break;
         case 0x6000 /* ISZ */ : {mem[ar]++;mem[ar]&=0xffff;if(mem[ar]==0)pc++;}dur+=2;break;
       }
-      return Q.pure(dur);
+      return dur;
     }
-  });
+  }
 
   halter = Q.emptyBox();
   breaker = Q.newBox(0);
   stepper = exe=>Q.do(function*(){
     if(halt)return;
     if(exe){
-      clocks += yield oneStep;
+      const clks = oneStep();
+      clocks += clks;
+      frameWait = 0;
       steps++;
     }
     display();
     if(halt)yield Q.putBox(halter,{});
   });
   Q.run(Q.join.any([Q.do(function*(){
-    yield Q.waitMS(100);
+    display();
+    yield Q.waitMS(16);
+    yield Q.readBox(breaker);
     while(1){
-      yield Q.readBox(breaker);
-      clocks += yield oneStep;
+      let clks = oneStep();
+      clocks += clks;
+      frameWait += clks;
       steps++;
       if(halt)break;
-      if(steps%1000==0){
+      if(frameWait >= maxFrames){
         display();
-        yield Q.waitMS(100);
+        yield Q.waitMS(16);
+        yield Q.readBox(breaker);
+        frameWait -= maxFrames;
       }
       if(breaks[pc]){
         yield Q.takeBox(breaker);
