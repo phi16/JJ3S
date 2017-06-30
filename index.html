@@ -47,7 +47,6 @@ body {
   height: 100%;
   border-left: 3px solid #141411;
   background: #222;
-  display: flex;
   flex-direction: column;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
 }
@@ -56,8 +55,15 @@ body {
   margin-top: 5px;
   border: 3px solid #777;
   border-radius: 3px;
+  float: left;
+}
+#screen.small {
   width: 320px;
   height: 240px;
+}
+#screen.large {
+  width: 640px;
+  height: 480px;
 }
 .info {
   margin-left: 15px;
@@ -200,7 +206,11 @@ canvas {
       </div>
     </div>
     <div id="display">
-      <canvas id="screen" width="640" height="480"></canvas>
+      <span>
+        <canvas id="screen" width="640" height="480" class="small"></canvas>
+        <button type="button" id="sizing">Large</button>
+        <div style="clear:left"></div>
+      </span>
       <div id="buttons">
         <button type="button" id="exec">Execute</button>
         <button type="button" id="step">Debug</button>
@@ -435,6 +445,20 @@ $(_=>{
       loadDataUrl(usp);
     }
   }
+
+  const sizingBtn = document.getElementById("sizing");
+  let smallScreen = true;
+  sizingBtn.addEventListener("click",_=>{
+    if(smallScreen){
+      $("#screen")[0].className = "large";
+      sizingBtn.textContent = "Small";
+      smallScreen = false;
+    }else{
+      $("#screen")[0].className = "small";
+      sizingBtn.textContent = "Large";
+      smallScreen = true;
+    }
+  });
 });
     </script>
   </body>
