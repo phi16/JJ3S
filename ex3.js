@@ -22,9 +22,47 @@ ex3.ready = _=>{
 };
 ex3.load = (src,macro,log)=>{
   ex3.halt();
-  srcs = src.split('\n').map(l=>l.split('/')[0].replace(/\t|\r/g,"").replace(/^ */,"").replace(/ *$/,""));
-  const ls = srcs.join(" \n ").replace(/,/g," , ").split(" ").filter(x=>x!="");
   let failed = false;
+  let macros = {};
+  macro.split('\n').forEach(l=>{
+    let lz = l.split(' = ').map(e=>e.replace(/\t|\r/g," ").replace(/^ */,"").replace(/ *$/,""));
+    let m = lz[0].match(/^@([a-zA-Z_][a-zA-Z0-9_]*)(?: |$)/);
+    if(m && m[1]){
+      let target = "^" + lz[0].replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&').replace(/\\\$\d/g,"([a-zA-Z][a-zA-Z0-9_]*)") + "$";
+      let replacement = lz[1];
+      if(macros[m[1]]==undefined)macros[m[1]] = [];
+      macros[m[1]].push({raw:lz[0], regex:new RegExp(target), repl:replacement});
+    }
+  });
+  srcs = src.split('\n').map(l=>l.split('/')[0].replace(/\t|\r/g,"").replace(/^ */,"").replace(/ *$/,""));
+  for(let i=0;i<srcs.length;i++){
+    let m = srcs[i].match(/^@([a-zA-Z_][a-zA-Z0-9_]*)(?: |$)/);
+    if(m){
+      let mcs = macros[m[1]];
+      if(!mcs){
+        failed = true;
+        log("L" + i + ": No macro found '" + m[1] + "'");
+        srcs[i] = "";
+        continue;
+      }
+      let done = false;
+      for(let j=0;j<mcs.length;j++){
+        let mc = mcs[j];
+        if(!mc.regex.test(srcs[i])){
+          continue;
+        }
+        srcs[i] = srcs[i].replace(mc.regex,mc.repl).replace(/\t|\r/g,"");
+        done = true;
+      }
+      if(!done){
+        failed = true;
+        log("L" + i + ": Mismatched macro '" + m[1] + "'");
+        srcs[i] = "";
+        continue;
+      }
+    }
+  }
+  const ls = srcs.join(" \n ").replace(/;/g," ").replace(/,/g," , ").split(" ").filter(x=>x!="");
 
   buffer = new Array(2048); // 1word x 2048
   buffer.fill(0);

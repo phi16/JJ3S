@@ -190,6 +190,26 @@ button:hover {
 canvas {
   image-rendering: pixelated;
 }
+#docs {
+  margin-top: 0px;
+  padding-left: 30px;
+  height: 100%;
+  color: #ccc;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', 'メイリオ', 'Meiryo UI', 'Rounded M+ 1p', monospace;
+  overflow-y: scroll;
+  font-size: 17px;
+}
+#docs h1 {
+  font-size: 40px;
+  margin-left: -10px;
+  border-bottom: 1px solid #fff;
+}
+#docs h2 {
+  font-size: 25px;
+  margin-top: 30px;
+  margin-bottom: 10px;
+  margin-left: -10px;
+}
     </style>
   </head>
   <body>
@@ -208,7 +228,60 @@ canvas {
         <input type="file" id="file"></input>
       </div>
       <pre id="macro"></pre>
-      <div id="docs"></div>
+      <div id="docs">
+        <h1>EX3+ Document</h1>
+        <h2>描画について</h2>
+        描画できるものとしては、40×30のスプライトマップと5つの動的スプライトになります。
+        <br>
+        各16×16スプライトは対応するCanvasのスプライト番号と回転角度(0~3)の値を持っています。
+        <br>
+        CPUは現在の選択スプライトを記憶しており、その変更とそれに対する操作によって描画を行うことになります。
+        <br> <br>
+        固定位置にスプライトを画面に描画するには次の手順を踏みます。
+        <ul>
+          <li>選択スプライトを描画したい場所に設定します。(<b>SLX, SLY</b>)</li>
+          <li>描画したいスプライトIDを書き込みます。(<b>WRT</b>)</li>
+          <li>(回転したい場合はその角度(0~3)を書き込みます。(<b>ROT</b>))</li>
+        </ul>
+        動的スプライトを位置指定と共に描画するには次の手順を踏みます。
+        <ul>
+          <li>選択スプライトを描画したいスプライトに設定します。</li>
+          <ul>
+            <li>ACをFFFFの状態で<b>SLX</b>した後に選択する動的スプライトの番号で<b>SLY</b>してください。</li>
+          </ul>
+          <li>描画したいスプライトIDを書き込みます。(<b>WRT</b>)</li>
+          <li>(回転したい場合はその角度(0~3)を書き込みます。(<b>ROT</b>))</li>
+          <li>移動したい位置(-16~640,-16~480)を書き込みます。(<b>TRX, TRY</b>)</li>
+        </ul>
+        1フレームには約70000命令費やす事ができます。これを超えると描画がおかしくなると思います。
+
+        <h2>追加命令</h2>
+        画面描画命令を追加するために割り込み関連の命令は全部無くなりました。
+        <ul>
+          <li>
+            <b>SEG</b>: セグメントにACの値を16進数で表示します。
+          </li>
+          <li>
+            <b>SLX, SLY</b>: 選択スプライトのX,YをACに設定します。
+          </li>
+          <li>
+            <b>WRT</b>: 選択スプライトのスプライト番号をACに設定します。
+          </li>
+          <li>
+            <b>TRX, TRY</b>: 選択スプライト(動的スプライト)の位置X,YをACに設定します。
+          </li>
+          <li>
+            <b>ROT</b>: 選択スプライトの角度(0~3)をACに設定します。反時計回りです。
+          </li>
+          <li>
+            <b>BTN</b>: 現在の4ボタン{左上下右}の状態をACに格納します。
+          </li>
+          <li>
+            <b>SLP</b>: 次のフレームになるまで待機します。
+          </li>
+        </ul>
+        <h2>Macroの使い方</h2>
+      </div>
     </div>
     <div id="display">
       <span>
@@ -266,10 +339,44 @@ $(_=>{
   const initSource = localStorage.getItem('src');
   if(initSource){
     editor.session.getDocument().setValue(initSource);
+  }else{
+    editor.session.getDocument().setValue(
+    `ORG 10
+LoopY,
+    STA X
+LoopX,
+    LDA X
+    SLX
+    LDA Y
+    SLY
+    LDA X
+    WRT
+    LDA Y
+    ROT
+
+    @inc X
+    @if (X>=W) goto LoopX
+
+    @inc Y
+    @if (Y>=H) goto LoopY
+
+    HLT
+
+X,  DEC 0
+Y,  DEC 0
+W,  DEC 40
+H,  DEC 30`);
   }
   const initMacro = localStorage.getItem('macro');
   if(initMacro){
     macroEditor.session.getDocument().setValue(initMacro);
+  }else{
+    macroEditor.session.getDocument().setValue(
+      `@inc $1 = ISZ $1
+@if ($1+$2) goto $3 = LDA $1; ADD $2; SZA; BUN $3
+@if ($1) goto $2 = LDA $1; SZA; BUN $2
+@if ($1>=$2) goto $3 = LDA $2; CMA; INC; ADD $1; SPA; BUN $3
+@if ($1<$2) goto $3 = LDA $2; CMA; INC; ADD $1; SNA; BUN $3`);
   }
   if(initSource && initMacro)srcUpdate(initSource,initMacro);
   else if(initSource)srcUpdate(initSource,"");
@@ -309,7 +416,12 @@ $(_=>{
           let ki = (k&0x3f)%8;
           let kj = Math.floor((k&0x3f)/8);
           let kr = (k&0xc0)/0x40;
+          ctx.save();
+          ctx.translate(j*16+8,i*16+8);
+          ctx.rotate(-Math.PI/2*kr);
+          ctx.translate(-j*16-8,-i*16-8);
           ctx.drawImage(spriteMap,ki*16,kj*16,16,16,j*16,i*16,16,16);
+          ctx.restore();
         }
       }
     };
@@ -430,7 +542,7 @@ $(_=>{
     fileInput.addEventListener("change",evt=>{
       loadImage(evt.target.files[0]);
     });
-    function loadDataUrl(url){
+    function loadUrl(url){
       const img = new Image();
       img.src = url;
       img.onload = _=>{
@@ -456,13 +568,15 @@ $(_=>{
       }
       const reader = new FileReader();
       reader.onloadend = file=>{
-        loadDataUrl(file.target.result);
+        loadUrl(file.target.result);
       };
       reader.readAsDataURL(f);
     }
     const usp = localStorage.getItem('sprite');
     if(usp!=undefined){
-      loadDataUrl(usp);
+      loadUrl(usp);
+    }else{
+      loadUrl("po.png");
     }
   }
 

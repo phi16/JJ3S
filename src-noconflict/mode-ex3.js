@@ -51,8 +51,11 @@ var Ex3HighlightRules = function() {
             token : keywordMapper,
             regex : "(?:I|[A-Z]{3})\\b"
         }, {
+            token : "variable.parameter",
+            regex : "@[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        }, {
             token : "identifier",
-            regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+            regex : "[a-zA-Z_][a-zA-Z0-9_]*\\b"
         }, {
             token : "constant.numeric",
             regex : "[+-]?(?:\\d|[A-F])+(?:(?:\\.(?:\\d|[A-F])*)?(?:[eE][+-]?\\d+)?)?\\b"
