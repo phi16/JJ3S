@@ -278,10 +278,10 @@ $(_=>{
   const stepBtn = document.getElementById("step");
   const statMsg = document.getElementById("status");
   execBtn.addEventListener("click",_=>{
+    stepBtn.style.visibility = "visible";
     if(!ex3.ready())return;
     if(done){
       reset();
-      stepBtn.style.visibility = "visible";
       return;
     }
     if(!running){
@@ -295,11 +295,11 @@ $(_=>{
       if(!breaking){
         reset();
       }else{
-        ex3.resume();
         breaking = false;
         execBtn.textContent = "Halt";
         stepBtn.textContent = "Break";
         statMsg.textContent = "Running...";
+        ex3.resume();
       }
     }
   });
@@ -312,26 +312,25 @@ $(_=>{
     }
     if(!running){
       ex3.exec(writeLog,writeMem,moveLine);
-      ex3.break();
       running = true;
       breaking = true;
       execBtn.textContent = "Resume";
       stepBtn.textContent = "Step";
       statMsg.textContent = "Interrupted.";
+      ex3.break();
       return;
     }
     if(!breaking){
-      ex3.break();
       breaking = true;
       execBtn.textContent = "Resume";
       stepBtn.textContent = "Step";
       statMsg.textContent = "Interrupted.";
+      ex3.break();
     }else{
       ex3.step();
     }
   });
   reset = _=>{
-    ex3.halt();
     running = false;
     breaking = false;
     done = false;
@@ -340,6 +339,7 @@ $(_=>{
     statMsg.textContent = "";
     writeLog("Ready.");
     writeMem("");
+    ex3.halt();
   };
   ex3.onHalt = _=>{
     statMsg.textContent = "Halt.";
@@ -356,6 +356,12 @@ $(_=>{
     done = true;
     execBtn.textContent = "Done";
     stepBtn.style.visibility = "hidden";
+  };
+  ex3.onBreak = _=>{
+    breaking = true;
+    execBtn.textContent = "Resume";
+    stepBtn.textContent = "Step";
+    statMsg.textContent = "Interrupted.";
   };
 
   if(1){

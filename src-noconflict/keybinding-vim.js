@@ -676,11 +676,11 @@ dom.importCssString(".normal-mode .ace_cursor{\
 .ace_dialog {\
   position: absolute;\
   left: 0; right: 0;\
-  background: white;\
+  background: black;\
   z-index: 15;\
   padding: .1em .8em;\
   overflow: hidden;\
-  color: #333;\
+  color: #ccc;\
 }\
 .ace_dialog-top {\
   border-bottom: 1px solid #eee;\
@@ -696,7 +696,8 @@ dom.importCssString(".normal-mode .ace_cursor{\
   background: transparent;\
   width: 20em;\
   color: inherit;\
-  font-family: monospace;\
+  font-size: 20px;\
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace\
 }", "vimMode");
 (function() {
   function dialogDiv(cm, template, bottom) {
@@ -4143,7 +4144,7 @@ dom.importCssString(".normal-mode .ace_cursor{\
     function makePrompt(prefix, desc) {
       var raw = '';
       if (prefix) {
-        raw += '<span style="font-family: monospace">' + prefix + '</span>';
+        raw += '<span>' + prefix + '</span>';
       }
       raw += '<input type="text"/> ' +
           '<span style="color: #888">';

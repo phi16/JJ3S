@@ -9,12 +9,14 @@ function hex4(x){
   return s.slice(s.length-4);
 }
 
-let srcs = [];
-let buffer = [];
-let aux = [];
-let labels = {};
-let addrs = {};
-let store = [];
+let srcs = []; // lined source
+let buffer = []; // whole memory
+let aux = []; // addr -> line
+let labels = {}; // label -> addr
+let addrs = {}; // labeled addr -> label, line
+let store = []; // display address
+let breaks = {}; // breakpoints
+
 ex3.ready = _=>{
   return buffer.length!=0;
 };
@@ -31,6 +33,7 @@ ex3.load = (src,log)=>{
   labels = {};
   addrs = {};
   store = [];
+  breaks = {};
   let lineNum = 1;
   let curAddr = 0;
   let indirectRef = false;
@@ -91,7 +94,7 @@ ex3.load = (src,log)=>{
       }else if(token=="\n"){
         lineNum++;
       }else if(token=="BREAK"){
-        console.log("pi");
+        breaks[curAddr] = true;
       }else if(token=="ASSERT"){
         console.log("po");
       }else{
@@ -301,6 +304,11 @@ ex3.exec = (logDisp,memDisp,lineNum)=>{
         display();
         yield Q.waitMS(100);
       }
+      if(breaks[pc]){
+        yield Q.takeBox(breaker);
+        yield stepper(false);
+        ex3.onBreak();
+      }
     }
     display();
   }),Q.do(function*(){
@@ -325,3 +333,4 @@ ex3.halt = _=>{
 };
 ex3.onHalt = _=>_;
 ex3.onCrash = _=>_;
+ex3.onBreak = _=>_;
