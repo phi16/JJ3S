@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>JJ3S</title>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet"/>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.3/require.min.js"></script>
@@ -36,8 +37,9 @@ body {
   margin: 0;
 }
 #editor {
-  margin: 0;
-  width: 50%;
+  margin: 5px 0 0 0;
+  width: 100%;
+  height: 100%;
 }
 #display {
   margin: 0;
@@ -49,7 +51,7 @@ body {
   flex-direction: column;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
 }
-#canvas {
+#screen {
   margin-left: 5px;
   margin-top: 5px;
   border: 3px solid #777;
@@ -58,7 +60,7 @@ body {
   height: 240px;
 }
 #exec {
-  margin-left: 5px;
+  margin-left: 10px;
   margin-top: 10px;
   width: 80px;
   height: 40px;
@@ -66,33 +68,145 @@ body {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
 }
 #step {
-  margin-left: 5px;
+  margin-left: 8px;
   margin-top: 10px;
   width: 80px;
   height: 40px;
   font-size: 17px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
 }
-#log {
+.info {
   margin-left: 15px;
   margin-top: 10px;
-  margin-bottom: 10px;
-  overflow-y: scroll;
   width: 100%;
   font-size: 18px;
-  color: #FFF;
+}
+#log {
+  color: #ccc;
+}
+#mem {
+  overflow-y: scroll;
+  margin-bottom: 10px;
+  color: #999;
+}
+#tab {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  background: #272822;
+}
+#tab > ul {
+  flex-direction: row;
+  background: #222;
+}
+.ui-tabs {
+	position: relative;/* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
+	padding: .2em;
+}
+.ui-tabs .ui-tabs-nav {
+	margin: 0;
+	padding: .2em .2em 0;
+}
+.ui-tabs .ui-tabs-nav li {
+	list-style: none;
+	float: left;
+	position: relative;
+	top: 0;
+	margin: 1px .2em 0 0;
+	border-bottom-width: 0;
+	padding: 0;
+	white-space: nowrap;
+}
+.ui-tabs .ui-tabs-nav .ui-tabs-anchor {
+	float: left;
+	padding: .4em .8em;
+	text-decoration: none;
+}
+.ui-tabs .ui-tabs-nav li.ui-tabs-active {
+}
+.ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor,
+.ui-tabs .ui-tabs-nav li.ui-state-disabled .ui-tabs-anchor,
+.ui-tabs .ui-tabs-nav li.ui-tabs-loading .ui-tabs-anchor {
+	cursor: text;
+}
+.ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
+	cursor: pointer;
+}
+.ui-tabs .ui-tabs-panel {
+	display: block;
+	border-width: 0;
+	background: none;
+}
+.ui-tabs li {
+  border-radius: 5px 5px 0 0;
+  margin-right: 10px;
+}
+.ui-tabs li.ui-state-default {
+  background: #333;
+}
+.ui-tabs li.ui-state-hover {
+  background: #444;
+}
+.ui-tabs li.ui-state-active {
+  background: #555;
+}
+.ui-tabs li > a {
+  outline: none;
+  color: #aaa;
+  font-size: 20px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
+}
+#sprite {
+  margin-left: 5px;
+  margin-top: 5px;
+  border: 3px solid #777;
+  border-radius: 3px;
+  width: 512px;
+  height: 512px;
+}
+#buttons > button {
+  background: #555;
+  color: #eee;
+  border-radius: 5px;
+  border-style: none;
+  outline: none;
+}
+#buttons > button:hover {
+  background: #666;
+  cursor: pointer;
+}
+#status {
+  margin-left: 10px;
+  line-height: 40px;
+  font-size: 20px;
+  color: #888;
+}
+#buttons {
+  flex-direction: row;
 }
     </style>
   </head>
   <body>
-    <pre id="editor"></pre>
+    <div id="tab">
+      <ul>
+        <li><a href="#editor">Editor</a></li>
+        <li><a href="#canvas">Canvas</a></li>
+      </ul>
+      <pre id="editor"></pre>
+      <div id="canvas">
+        <canvas id="sprite" width="128" height="128"></canvas>
+      </div>
+    </div>
     <div id="display">
-      <canvas id="canvas" width="640" height="480"></canvas>
-      <div style="flex-direction:row">
+      <canvas id="screen" width="640" height="480"></canvas>
+      <div id="buttons">
         <button type="button" id="exec">Execute</button>
         <button type="button" id="step">Debug</button>
+        <span id="status"></span>
       </div>
-      <div id="log">
+      <div id="log" class="info">
+      </div>
+      <div id="mem" class="info">
       </div>
     </div>
     <script src="src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
@@ -100,10 +214,15 @@ body {
     <script>
 let vim,emacs;
 $(_=>{
+  $("#tab").tabs();
   const logElem = document.getElementById("log");
+  const memElem = document.getElementById("mem");
   let reset = _=>_;
   function writeLog(txt){
     logElem.innerText = txt;
+  }
+  function writeMem(txt){
+    memElem.innerText = txt;
   }
   function srcUpdate(src){
     reset();
@@ -113,11 +232,15 @@ $(_=>{
       logs += txt + "\n";
     });
     writeLog(logs);
+    writeMem("");
   }
   var editor = ace.edit("editor");
   editor.setTheme("ace/theme/monokai");
   editor.setFontSize(20);
   editor.session.setMode("ace/mode/ex3");
+  function moveLine(ln){
+    editor.gotoLine(ln,0,false);
+  }
   const initSource = localStorage.getItem('src');
   if(initSource){
     editor.session.getDocument().setValue(initSource);
@@ -139,25 +262,31 @@ $(_=>{
     else if(im=="emacs")emacs();
   }
 
-  const cvs = document.getElementById("canvas");
+  const cvs = document.getElementById("screen");
   const ctx = cvs.getContext('2d');
   ctx.fillStyle = "rgb(255,128,0)";
   ctx.fillRect(0,0,640,480);
 
   let running = false;
   let breaking = false;
+  let done = false;
   const execBtn = document.getElementById("exec");
   const stepBtn = document.getElementById("step");
+  const statMsg = document.getElementById("status");
   execBtn.addEventListener("click",_=>{
     if(!ex3.ready())return;
+    if(done){
+      reset();
+      stepBtn.style.visibility = "visible";
+      return;
+    }
     if(!running){
-      ex3.exec(txt=>{
-        writeLog(txt);
-      });
+      ex3.exec(writeLog,writeMem,moveLine);
       running = true;
       breaking = false;
       execBtn.textContent = "Halt";
       stepBtn.textContent = "Break";
+      statMsg.textContent = "Running...";
     }else{
       if(!breaking){
         reset();
@@ -166,20 +295,25 @@ $(_=>{
         breaking = false;
         execBtn.textContent = "Halt";
         stepBtn.textContent = "Break";
+        statMsg.textContent = "Running...";
       }
     }
   });
   stepBtn.addEventListener("click",_=>{
     if(!ex3.ready())return;
+    if(done){
+      reset();
+      stepBtn.style.visibility = "visible";
+      return;
+    }
     if(!running){
-      ex3.exec(txt=>{
-        writeLog(txt);
-      });
+      ex3.exec(writeLog,writeMem,moveLine);
       ex3.break();
       running = true;
       breaking = true;
       execBtn.textContent = "Resume";
       stepBtn.textContent = "Step";
+      statMsg.textContent = "Interrupted.";
       return;
     }
     if(!breaking){
@@ -187,6 +321,7 @@ $(_=>{
       breaking = true;
       execBtn.textContent = "Resume";
       stepBtn.textContent = "Step";
+      statMsg.textContent = "Interrupted.";
     }else{
       ex3.step();
     }
@@ -195,10 +330,29 @@ $(_=>{
     ex3.halt();
     running = false;
     breaking = false;
+    done = false;
     execBtn.textContent = "Execute";
     stepBtn.textContent = "Debug";
+    statMsg.textContent = "";
     writeLog("Ready.");
+    writeMem("");
   };
+  ex3.onHalt = _=>{
+    statMsg.textContent = "Halt.";
+    running = false;
+    breaking = false;
+    done = true;
+    execBtn.textContent = "Done";
+    stepBtn.style.visibility = "hidden";
+  };
+  ex3.onCrash = _=>{
+    statMsg.textContent = "Crashed.";
+    running = false;
+    breaking = false;
+    done = true;
+    execBtn.textContent = "Done";
+    stepBtn.style.visibility = "hidden";
+  }
 });
     </script>
   </body>

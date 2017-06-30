@@ -69,12 +69,14 @@ ex3.load = (src,log)=>{
       else if(token=="SZE")setLine(), buffer[curAddr++] = 0x7002;
       else if(token=="HLT")setLine(), buffer[curAddr++] = 0x7001;
       else if(token=="SEG")setLine(), buffer[curAddr++] = 0xF800;
-      else if(token=="SPR")setLine(), buffer[curAddr++] = 0xF400;
-      else if(token=="WRT")setLine(), buffer[curAddr++] = 0xF200;
-      else if(token=="TRS")setLine(), buffer[curAddr++] = 0xF100;
-      else if(token=="ROT")setLine(), buffer[curAddr++] = 0xF080;
-      else if(token=="BTN")setLine(), buffer[curAddr++] = 0xF040;
-      else if(token=="SLP")setLine(), buffer[curAddr++] = 0xF020;
+      else if(token=="SLX")setLine(), buffer[curAddr++] = 0xF400;
+      else if(token=="SLY")setLine(), buffer[curAddr++] = 0xF200;
+      else if(token=="WRT")setLine(), buffer[curAddr++] = 0xF100;
+      else if(token=="TRX")setLine(), buffer[curAddr++] = 0xF080;
+      else if(token=="TRY")setLine(), buffer[curAddr++] = 0xF040;
+      else if(token=="ROT")setLine(), buffer[curAddr++] = 0xF020;
+      else if(token=="BTN")setLine(), buffer[curAddr++] = 0xF010;
+      else if(token=="SLP")setLine(), buffer[curAddr++] = 0xF008;
       else if(token=="INP")log("Deprecated: " + token),curAddr++,failed = true;
       else if(token=="OUT")log("Deprecated: " + token),curAddr++,failed = true;
       else if(token=="SKI")log("Deprecated: " + token),curAddr++,failed = true;
@@ -141,7 +143,7 @@ ex3.load = (src,log)=>{
 let halter = null;
 let breaker = null;
 let stepper = null;
-ex3.exec = log=>{
+ex3.exec = (logDisp,memDisp,lineNum)=>{
   if(!ex3.ready())return;
   const mem = buffer.concat([]);
   let halt = false;
@@ -153,13 +155,59 @@ ex3.exec = log=>{
 
   let clocks = 0;
   let steps = 0;
+  function insn(x){
+    const opName = {
+      0x7800:"CLA",
+      0x7400:"CLE",
+      0x7200:"CMA",
+      0x7100:"CME",
+      0x7080:"CIR",
+      0x7040:"CIL",
+      0x7020:"INC",
+      0x7010:"SPA",
+      0x7008:"SNA",
+      0x7004:"SZA",
+      0x7002:"SZE",
+      0x7001:"HLT",
+      0xF800:"SEG",
+      0xF400:"SLX",
+      0xF200:"SLY",
+      0xF100:"WRT",
+      0xF080:"TRX",
+      0xF040:"TRY",
+      0xF020:"ROT",
+      0xF010:"BTN",
+      0xF008:"SLP",
+      0x0000:"AND",
+      0x1000:"ADD",
+      0x2000:"LDA",
+      0x3000:"STA",
+      0x4000:"BUN",
+      0x5000:"BSA",
+      0x6000:"ISZ"
+    };
+    if((x&0x7000)==0x7000){
+      let s = opName[x];
+      if(!s)return "undefined";
+      return s;
+    }else{
+      let s = opName[x&0x7000];
+      if(!s)return "undefined;"
+      s += " " + hex3(x&0xfff);
+      if(x&0x8000) s += " I";
+      return s;
+    }
+  }
   function display(){
-    let str = "";
+    let str;
+    str = "";
     str += steps + "STEP, " + clocks + "CLK\n";
-    str += "PC=" + hex3(pc) + " (L" + aux[pc] + ", " + srcs[aux[pc]-1] + "), ";
+    str += "PC=" + hex3(pc) + " (" + hex4(mem[pc]) + ", " + insn(mem[pc]) + ")\n";
+    str += "L" + aux[pc] + ", " + srcs[aux[pc]-1] + "\n\n";
     str += "AC=" + ac + " (" + hex4(ac) + "), E=" + e + "\n";
     str += "SEG[" + hex4(seg) + "]";
-    str += "\n\n";
+    logDisp(str);
+    str = "";
     Object.keys(store).forEach(s=>{
       let ad = store[s].v;
       let v = mem[ad];
@@ -172,7 +220,8 @@ ex3.exec = log=>{
       if(store[s].sym)vs = hex4(v);
       str += ": " + vs + "\n";
     });
-    return str;
+    memDisp(str);
+    lineNum(aux[pc]);
   }
 
   const oneStep = Q.do(function*(){
@@ -192,15 +241,17 @@ ex3.exec = log=>{
         case 0x7008 /* SNA */ : {if((ac&0x8000))pc++;}break;
         case 0x7004 /* SZA */ : {if(ac==0)pc++;}break;
         case 0x7002 /* SZE */ : {if(e==0)pc++;}break;
-        case 0x7001 /* HLT */ : halt=true;break;
+        case 0x7001 /* HLT */ : halt=true;ex3.onHalt();break;
         case 0xF800 /* SEG */ : seg=ac;break;
-        case 0xF400 /* SPR */ : break;
-        case 0xF200 /* WRT */ : break;
-        case 0xF100 /* TRS */ : break;
-        case 0xF080 /* ROT */ : break;
-        case 0xF040 /* BTN */ : break;
-        case 0xF020 /* SLP */ : break;
-        default: toastr.error("Invalid instruction: " + hex4(op));halt=true;break;
+        case 0xF400 /* SLX */ : break;
+        case 0xF200 /* SLY */ : break;
+        case 0xF100 /* WRT */ : break;
+        case 0xF080 /* TRX */ : break;
+        case 0xF040 /* TRY */ : break;
+        case 0xF020 /* ROT */ : break;
+        case 0xF010 /* BTN */ : break;
+        case 0xF008 /* SLP */ : break;
+        default: toastr.error("Invalid instruction: " + hex4(op));halt=true;ex3.onCrash();break;
       }
       return Q.pure(4);
     }else{
@@ -232,7 +283,7 @@ ex3.exec = log=>{
       clocks += yield oneStep;
       steps++;
     }
-    log(display());
+    display();
     if(halt)yield Q.putBox(halter,{});
   });
   Q.run(Q.join.any([Q.do(function*(){
@@ -243,11 +294,11 @@ ex3.exec = log=>{
       steps++;
       if(halt)break;
       if(steps%1000==0){
-        log(display());
+        display();
         yield Q.waitMS(100);
       }
     }
-    log(display());
+    display();
   }),Q.do(function*(){
     yield Q.takeBox(halter);
     halter = breaker = stepper = null;
@@ -268,3 +319,5 @@ ex3.step = _=>{
 ex3.halt = _=>{
   if(halter)Q.run(Q.putBox(halter,{}));
 };
+ex3.onHalt = _=>_;
+ex3.onCrash = _=>_;
