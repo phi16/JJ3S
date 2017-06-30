@@ -150,7 +150,7 @@ ex3.load = (src,log)=>{
 let halter = null;
 let breaker = null;
 let stepper = null;
-ex3.exec = (logDisp,memDisp,lineNum)=>{
+ex3.exec = (logDisp,memDisp,lineNum,render)=>{
   if(!ex3.ready())return;
   const mem = buffer.concat([]);
   let halt = false;
@@ -159,6 +159,15 @@ ex3.exec = (logDisp,memDisp,lineNum)=>{
   let ac = 0;
   let e = 0;
   let seg = 0;
+  let sprX = 0, sprY = 0;
+  let field = [];
+  for(let i=0;i<30;i++){
+    let v = [];
+    for(let j=0;j<40;j++){
+      v.push(0);
+    }
+    field.push(v);
+  }
 
   let clocks = 0;
   let steps = 0;
@@ -229,6 +238,7 @@ ex3.exec = (logDisp,memDisp,lineNum)=>{
     });
     memDisp(str);
     lineNum(aux[pc]);
+    render(field);
   }
 
   const oneStep = Q.do(function*(){
@@ -250,12 +260,12 @@ ex3.exec = (logDisp,memDisp,lineNum)=>{
         case 0x7002 /* SZE */ : {if(e==0)pc++;}break;
         case 0x7001 /* HLT */ : halt=true;ex3.onHalt();break;
         case 0xF800 /* SEG */ : seg=ac;break;
-        case 0xF400 /* SLX */ : break;
-        case 0xF200 /* SLY */ : break;
-        case 0xF100 /* WRT */ : break;
+        case 0xF400 /* SLX */ : sprX=ac;break;
+        case 0xF200 /* SLY */ : sprY=ac;break;
+        case 0xF100 /* WRT */ : field[sprY][sprX]=(ac&0x3f)|(field[sprY][sprX]&0xc0);break;
         case 0xF080 /* TRX */ : break;
         case 0xF040 /* TRY */ : break;
-        case 0xF020 /* ROT */ : break;
+        case 0xF020 /* ROT */ : field[sprY][sprX]=((ac&0x3)<<6)|(field[sprY][sprX]&0x3f);break;
         case 0xF010 /* BTN */ : break;
         case 0xF008 /* SLP */ : break;
         default: toastr.error("Invalid instruction: " + hex4(op));halt=true;ex3.onCrash();break;

@@ -264,11 +264,25 @@ $(_=>{
     else if(im=="emacs")emacs();
   }
 
+  let render = _=>_;
+  let spriteMap = new Image();
   if(1){
     const cvs = document.getElementById("screen");
     const ctx = cvs.getContext('2d');
-    ctx.fillStyle = "rgb(255,128,0)";
+    ctx.fillStyle = "black";
     ctx.fillRect(0,0,640,480);
+    ctx.imageSmoothingEnabled = false;
+    render = (cont)=>{
+      for(let i=0;i<30;i++){
+        for(let j=0;j<40;j++){
+          let k = cont[i][j];
+          let ki = (k&0x3f)%8;
+          let kj = Math.floor((k&0x3f)/8);
+          let kr = (k&0xc0)/0x40;
+          ctx.drawImage(spriteMap,ki*16,kj*16,16,16,j*16,i*16,16,16);
+        }
+      }
+    };
   }
 
   let running = false;
@@ -285,7 +299,7 @@ $(_=>{
       return;
     }
     if(!running){
-      ex3.exec(writeLog,writeMem,moveLine);
+      ex3.exec(writeLog,writeMem,moveLine,render);
       running = true;
       breaking = false;
       execBtn.textContent = "Halt";
@@ -311,7 +325,7 @@ $(_=>{
       return;
     }
     if(!running){
-      ex3.exec(writeLog,writeMem,moveLine);
+      ex3.exec(writeLog,writeMem,moveLine,render);
       running = true;
       breaking = true;
       execBtn.textContent = "Resume";
@@ -397,6 +411,7 @@ $(_=>{
         localStorage.setItem('sprite',url);
         ctx.fillStyle = 'black';
         ctx.fillRect(0,0,517,517);
+        spriteMap = img;
         for(let i=0;i<8;i++){
           for(let j=0;j<8;j++){
             ctx.drawImage(img,i*16,j*16,16,16,i*65,j*65,64,64);
@@ -405,7 +420,7 @@ $(_=>{
       };
     }
     function loadImage(f){
-      if(!f.type.match('image.*')){
+      if(!f || !f.type.match('image.*')){
         console.log("Not supported (invalid file type)");
         return;
       }
