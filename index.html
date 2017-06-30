@@ -59,22 +59,6 @@ body {
   width: 320px;
   height: 240px;
 }
-#exec {
-  margin-left: 10px;
-  margin-top: 10px;
-  width: 80px;
-  height: 40px;
-  font-size: 17px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
-}
-#step {
-  margin-left: 8px;
-  margin-top: 10px;
-  width: 80px;
-  height: 40px;
-  font-size: 17px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
-}
 .info {
   margin-left: 15px;
   margin-top: 10px;
@@ -158,20 +142,26 @@ body {
 }
 #sprite {
   margin-left: 5px;
-  margin-top: 5px;
+  margin-top: 10px;
   border: 3px solid #777;
   border-radius: 3px;
   width: 512px;
   height: 512px;
 }
-#buttons > button {
+button {
   background: #555;
   color: #eee;
   border-radius: 5px;
   border-style: none;
   outline: none;
+  margin-left: 10px;
+  margin-top: 10px;
+  width: 80px;
+  height: 40px;
+  font-size: 17px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
 }
-#buttons > button:hover {
+button:hover {
   background: #666;
   cursor: pointer;
 }
@@ -184,6 +174,15 @@ body {
 #buttons {
   flex-direction: row;
 }
+#canvas {
+  overflow: hidden;
+}
+#file {
+  visibility: hidden;
+}
+canvas {
+  image-rendering: pixelated;
+}
     </style>
   </head>
   <body>
@@ -195,6 +194,9 @@ body {
       <pre id="editor"></pre>
       <div id="canvas">
         <canvas id="sprite" width="128" height="128"></canvas>
+        <br>
+        <button type="button" id="load">Load</button>
+        <input type="file" id="file"></input>
       </div>
     </div>
     <div id="display">
@@ -262,10 +264,12 @@ $(_=>{
     else if(im=="emacs")emacs();
   }
 
-  const cvs = document.getElementById("screen");
-  const ctx = cvs.getContext('2d');
-  ctx.fillStyle = "rgb(255,128,0)";
-  ctx.fillRect(0,0,640,480);
+  if(1){
+    const cvs = document.getElementById("screen");
+    const ctx = cvs.getContext('2d');
+    ctx.fillStyle = "rgb(255,128,0)";
+    ctx.fillRect(0,0,640,480);
+  }
 
   let running = false;
   let breaking = false;
@@ -352,6 +356,56 @@ $(_=>{
     done = true;
     execBtn.textContent = "Done";
     stepBtn.style.visibility = "hidden";
+  };
+
+  if(1){
+    const cvs = document.getElementById("sprite");
+    const ctx = cvs.getContext('2d');
+    const loadBtn = document.getElementById("load");
+    loadBtn.addEventListener("click",_=>{
+      $("#file").click();
+    });
+    const fileInput = document.getElementById("file");
+    loadBtn.addEventListener("dragover",evt=>{
+      evt.stopPropagation();
+      evt.preventDefault();
+      evt.dataTransfer.dropEffect = 'copy';
+    });
+    loadBtn.addEventListener("drop",evt=>{
+      evt.stopPropagation();
+      evt.preventDefault();
+      loadImage(evt.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change",evt=>{
+      loadImage(evt.target.files[0]);
+    });
+    function loadDataUrl(url){
+      const img = new Image();
+      img.src = url;
+      img.onload = _=>{
+        if(img.width!=128 || img.height!=128){
+          console.log("Not supported (invalid size)");
+          return;
+        }
+        localStorage.setItem('sprite',url);
+        ctx.drawImage(img,0,0);
+      };
+    }
+    function loadImage(f){
+      if(!f.type.match('image.*')){
+        console.log("Not supported (invalid file type)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = file=>{
+        loadDataUrl(file.target.result);
+      };
+      reader.readAsDataURL(f);
+    }
+    const usp = localStorage.getItem('sprite');
+    if(usp!=undefined){
+      loadDataUrl(usp);
+    }
   }
 });
     </script>
