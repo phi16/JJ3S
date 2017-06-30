@@ -193,7 +193,7 @@ canvas {
       </ul>
       <pre id="editor"></pre>
       <div id="canvas">
-        <canvas id="sprite" width="128" height="128"></canvas>
+        <canvas id="sprite" width="517" height="517"></canvas>
         <br>
         <button type="button" id="load">Load</button>
         <input type="file" id="file"></input>
@@ -361,6 +361,7 @@ $(_=>{
   if(1){
     const cvs = document.getElementById("sprite");
     const ctx = cvs.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
     const loadBtn = document.getElementById("load");
     loadBtn.addEventListener("click",_=>{
       $("#file").click();
@@ -388,7 +389,13 @@ $(_=>{
           return;
         }
         localStorage.setItem('sprite',url);
-        ctx.drawImage(img,0,0);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0,0,517,517);
+        for(let i=0;i<8;i++){
+          for(let j=0;j<8;j++){
+            ctx.drawImage(img,i*16,j*16,16,16,i*65,j*65,64,64);
+          }
+        }
       };
     }
     function loadImage(f){

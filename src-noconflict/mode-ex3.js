@@ -13,7 +13,7 @@ var Ex3HighlightRules = function() {
     var keywordMapper = this.createKeywordMapper({
         "support.function": newIns,
         "variable.language" : defIns,
-        "keyword": depIns,
+        "invalid": depIns,
         "constant.language": valIns,
     }, "identifier", true);
 
@@ -41,6 +41,12 @@ var Ex3HighlightRules = function() {
                 { token : "constant.numeric", regex : "[+-]?(?:\\d|[A-F])+(?:(?:\\.(?:\\d|[A-F])*)?(?:[eE][+-]?\\d+)?)?\\b", next: "start" },
                 { defaultToken : "identifier" }
             ]
+        },  {
+            token : "keyword",
+            regex : "ASSERT\\b"
+        }, {
+            token : "keyword",
+            regex : "BREAK\\b"
         }, {
             token : keywordMapper,
             regex : "(?:I|[A-Z]{3})\\b"

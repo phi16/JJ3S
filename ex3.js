@@ -90,6 +90,10 @@ ex3.load = (src,log)=>{
         return;
       }else if(token=="\n"){
         lineNum++;
+      }else if(token=="BREAK"){
+        console.log("pi");
+      }else if(token=="ASSERT"){
+        console.log("po");
       }else{
         const mrefOp = ["AND","ADD","LDA","STA","BUN","BSA","ISZ"];
         let ix = mrefOp.indexOf(token);
