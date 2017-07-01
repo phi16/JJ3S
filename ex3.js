@@ -67,6 +67,7 @@ ex3.load = (src,macro,log)=>{
       }
     }
   }
+  ex3.onCompiled([].concat.apply([],srcs.map(l=>l.split(";").map(s=>s.replace(/^ */,"").replace(/ *$/,"")))));
   const ls = srcs.join(" \n ").replace(/;/g," ").replace(/,/g," , ").split(" ").filter(x=>x!="");
 
   buffer = new Array(2048); // 1word x 2048
@@ -478,6 +479,7 @@ ex3.keyChange = v=>{
 ex3.onHalt = _=>_;
 ex3.onCrash = _=>_;
 ex3.onBreak = _=>_;
+ex3.onCompiled = _=>_;
 
 return ex3;
 })();
