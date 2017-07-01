@@ -210,6 +210,14 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
     }
     field.push(v);
   }
+  let movSprC = [];
+  let movSprX = [];
+  let movSprY = [];
+  for(let i=0;i<5;i++){
+    movSprC.push(0);
+    movSprX.push(512);
+    movSprY.push(512);
+  }
 
   let clocks = 0;
   let steps = 0;
@@ -282,7 +290,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
     });
     memDisp(str);
     lineNum(aux[pc]);
-    render(field);
+    render(field,movSprC,movSprX,movSprY);
   }
 
   function oneStep(){
@@ -306,10 +314,22 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
         case 0xF800 /* SEG */ : seg=ac;break;
         case 0xF400 /* SLX */ : sprX=ac;break;
         case 0xF200 /* SLY */ : sprY=ac;break;
-        case 0xF100 /* WRT */ : field[sprY][sprX]=(ac&0x3f)|(field[sprY][sprX]&0xc0);break;
-        case 0xF080 /* TRX */ : break;
-        case 0xF040 /* TRY */ : break;
-        case 0xF020 /* ROT */ : field[sprY][sprX]=((ac&0x3)<<6)|(field[sprY][sprX]&0x3f);break;
+        case 0xF100 /* WRT */ : {
+          if(sprX!=0xffff){
+            field[sprY][sprX]=(ac&0x3f)|(field[sprY][sprX]&0xc0);
+          }else{
+            movSprC[sprY]=(ac&0x3f)|(movSprC[sprY]&0xc0);
+          }
+        }break;
+        case 0xF080 /* TRX */ : movSprX[sprY]=ac;break;
+        case 0xF040 /* TRY */ : movSprY[sprY]=ac;break;
+        case 0xF020 /* ROT */ : {
+          if(sprX!=0xffff){
+            field[sprY][sprX]=((ac&0x3)<<6)|(field[sprY][sprX]&0x3f);
+          }else{
+            movSprC[sprY]=((ac&0x3)<<6)|(movSprC[sprY]&0x3f);
+          }
+        }break;
         case 0xF010 /* BTN */ : break;
         case 0xF008 /* SLP */ : break;
         default: toastr.error("Invalid instruction: " + hex4(op));halt=true;ex3.onCrash();break;

@@ -21,12 +21,6 @@ var Ex3HighlightRules = function() {
         "start" : [ {
             token : "comment",
             regex : "/.*$"
-        },{
-            token : "string",           // " string
-            regex : '".*?"'
-        }, {
-            token : "string",           // ' string
-            regex : "'.*?'"
         }, {
             token : "constant.language",
             regex : "CHR\\b",
@@ -36,9 +30,9 @@ var Ex3HighlightRules = function() {
             ]
         }, {
             token : "constant.language",
-            regex : "HEX\\b",
+            regex : "HEX|ORG\\b",
             next : [
-                { token : "constant.numeric", regex : "[+-]?(?:\\d|[A-F])+(?:(?:\\.(?:\\d|[A-F])*)?(?:[eE][+-]?\\d+)?)?\\b", next: "start" },
+                { token : "constant.numeric", regex : "[+-]?(?:\\d|[A-Fa-f])+(?:(?:\\.(?:\\d|[A-Fa-f])*)?(?:[eE][+-]?\\d+)?)?\\b", next: "start" },
                 { defaultToken : "identifier" }
             ]
         },  {
@@ -61,7 +55,7 @@ var Ex3HighlightRules = function() {
             regex : "[a-zA-Z_][a-zA-Z0-9_]*\\b"
         }, {
             token : "constant.numeric",
-            regex : "[+-]?(?:\\d|[A-F])+(?:(?:\\.(?:\\d|[A-F])*)?(?:[eE][+-]?\\d+)?)?\\b"
+            regex : "[+-]?(?:\\d|[A-Fa-f])+(?:(?:\\.(?:\\d|[A-Fa-f])*)?(?:[eE][+-]?\\d+)?)?\\b"
         }, {
             token : "text",
             regex : "\\s+"

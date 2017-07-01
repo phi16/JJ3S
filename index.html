@@ -149,7 +149,6 @@ body {
 }
 #sprite {
   margin-left: 5px;
-  margin-top: 10px;
   border: 3px solid #777;
   border-radius: 3px;
   width: 512px;
@@ -191,7 +190,7 @@ canvas {
   image-rendering: pixelated;
 }
 #docs {
-  margin-top: 0px;
+  margin-top: 5px;
   padding-left: 30px;
   height: 100%;
   color: #ccc;
@@ -210,6 +209,32 @@ canvas {
   margin-bottom: 10px;
   margin-left: -10px;
 }
+#haxis {
+  display: flex;
+}
+#haxis > span {
+  width: 65px;
+  text-align: center;
+}
+#axis {
+  display: flex;
+  margin-left: 10px;
+  margin-top: 10px;
+  color: #ccc;
+  font-size: 20px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', 'メイリオ', 'Meiryo UI', 'Rounded M+ 1p', monospace;
+}
+#vaxis {
+  display: flex;
+  flex-direction: column;
+}
+#vaxis > div {
+  height: 65px;
+  line-height: 65px;
+}
+#load {
+  margin-top: 0px;
+}
     </style>
   </head>
   <body>
@@ -222,7 +247,32 @@ canvas {
       </ul>
       <pre id="editor"></pre>
       <div id="canvas">
-        <canvas id="sprite" width="517" height="517"></canvas>
+        <div id="axis">
+          <div id="vaxis">
+            <div style="height:25px;line-height:25px;color:#777">0o</div>
+            <div>0.</div>
+            <div>1.</div>
+            <div>2.</div>
+            <div>3.</div>
+            <div>4.</div>
+            <div>5.</div>
+            <div>6.</div>
+            <div>7.</div>
+          </div>
+          <div>
+            <div id="haxis">
+              <span>.0</span>
+              <span>.1</span>
+              <span>.2</span>
+              <span>.3</span>
+              <span>.4</span>
+              <span>.5</span>
+              <span>.6</span>
+              <span>.7</span>
+            </div>
+            <canvas id="sprite" width="517" height="517"></canvas>
+          </div>
+        </div>
         <br>
         <button type="button" id="load">Load</button>
         <input type="file" id="file"></input>
@@ -286,14 +336,18 @@ canvas {
             <b>SLP</b>: 次のフレームになるまで待機します。
           </li>
         </ul>
-        現在 <b>TRX, TRY, BTN, SLP</b> が未実装。
+        現在 <b>BTN, SLP</b> が未実装。
         <h2>Macroの使い方</h2>
         サンプル見たらだいたいわかると思う。
-        ちなみに左右の区切りは空白込みで " = " です。
+        ちなみに左右の区切りは空白込みで「 = 」です。
         <h2>その他機能</h2>
         <b>BREAK</b>と書くとそこにブレークポイントが仕込めます。
         <br>
         通常実行時にそこに引っかかると一時停止し、好きにステップ実行などができます。
+        <br>
+        仕込まれる場所は「次の命令」なので、ラベルの前とかに書くと期待通りにいかないかも。
+        <br>
+        一度仕込むと実行中に消すとかできないのでめっちゃ不便。
         <br>
         条件付きブレークポイントとして<b>ASSERT</b>をそのうち実装したい。
         <br><br>
@@ -306,7 +360,7 @@ canvas {
           <li>ASSERTの実装</li>
           <li>バックバッファの表示</li>
         </ul>
-        <div style="height:50px"></div>
+        <div style="height:30px"></div>
       </div>
     </div>
     <div id="display">
@@ -433,10 +487,10 @@ H,  DEC 30`);
     ctx.fillStyle = "black";
     ctx.fillRect(0,0,640,480);
     ctx.imageSmoothingEnabled = false;
-    render = (cont)=>{
+    render = (map,mvc,mvx,mvy)=>{
       for(let i=0;i<30;i++){
         for(let j=0;j<40;j++){
-          let k = cont[i][j];
+          let k = map[i][j];
           let ki = (k&0x3f)%8;
           let kj = Math.floor((k&0x3f)/8);
           let kr = (k&0xc0)/0x40;
@@ -447,6 +501,20 @@ H,  DEC 30`);
           ctx.drawImage(spriteMap,ki*16,kj*16,16,16,j*16,i*16,16,16);
           ctx.restore();
         }
+      }
+      for(let i=0;i<5;i++){
+        let x = mvx[i]&0x8000 ? mvx[i]-0x10000 : mvx[i];
+        let y = mvy[i]&0x8000 ? mvy[i]-0x10000 : mvy[i];
+        let k = mvc[i];
+        let ki = (k&0x3f)%8;
+        let kj = Math.floor((k&0x3f)/8);
+        let kr = (mvc[i]&0xc0)/0x40;
+        ctx.save();
+        ctx.translate(x+8,y+8);
+        ctx.rotate(-Math.PI/2*kr);
+        ctx.translate(-x-8,-y-8);
+        ctx.drawImage(spriteMap,ki*16,kj*16,16,16,y,x,16,16);
+        ctx.restore();
       }
     };
   }
