@@ -215,14 +215,15 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
   let movSprY = [];
   for(let i=0;i<5;i++){
     movSprC.push(0);
-    movSprX.push(512);
-    movSprY.push(512);
+    movSprX.push(0x7fff);
+    movSprY.push(0x7fff);
   }
 
   let clocks = 0;
   let steps = 0;
   let frameWait = 0;
-  const maxFrames = 800 * 480;
+  const maxFrames = 800 * 512;
+  let sleep = false;
   function insn(x){
     const opName = {
       0x7800:"CLA",
@@ -266,7 +267,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
       return s;
     }
   }
-  function display(){
+  function display(moveLine){
     let str;
     str = "";
     str += steps + "STEP, " + clocks + "CLK\n";
@@ -289,7 +290,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
       str += ": " + vs + "\n";
     });
     memDisp(str);
-    lineNum(aux[pc]);
+    if(moveLine)lineNum(aux[pc]);
     render(field,movSprC,movSprX,movSprY);
   }
 
@@ -331,7 +332,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
           }
         }break;
         case 0xF010 /* BTN */ : break;
-        case 0xF008 /* SLP */ : break;
+        case 0xF008 /* SLP */ : sleep=true;break;
         default: toastr.error("Invalid instruction: " + hex4(op));halt=true;ex3.onCrash();break;
       }
       return 4;
@@ -365,12 +366,16 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
       clocks += clks;
       frameWait = 0;
       steps++;
+      if(sleep){
+        clocks = Math.ceil(clocks/maxFrames)*maxFrames;
+        sleep = false;
+      }
     }
-    display();
+    display(true);
     if(halt)yield Q.putBox(halter,{});
   });
   Q.run(Q.join.any([Q.do(function*(){
-    display();
+    display(false);
     yield Q.waitMS(16);
     yield Q.readBox(breaker);
     while(1){
@@ -379,11 +384,16 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
       frameWait += clks;
       steps++;
       if(halt)break;
-      if(frameWait >= maxFrames){
-        display();
+      if(frameWait >= maxFrames || sleep){
+        frameWait -= maxFrames;
+        if(sleep){
+          clocks = Math.ceil(clocks/maxFrames)*maxFrames;
+          frameWait = 0;
+          sleep = false;
+        }
+        display(false);
         yield Q.waitMS(16);
         yield Q.readBox(breaker);
-        frameWait -= maxFrames;
       }
       if(breaks[pc]){
         yield Q.takeBox(breaker);
@@ -392,7 +402,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
         yield Q.readBox(breaker);
       }
     }
-    display();
+    display(true);
   }),Q.do(function*(){
     yield Q.takeBox(halter);
     halter = breaker = stepper = null;
