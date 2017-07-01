@@ -1,3 +1,5 @@
+const ex3 = (_=>{
+
 const ex3 = {};
 
 function hex3(x){
@@ -16,6 +18,7 @@ let labels = {}; // label -> addr
 let addrs = {}; // labeled addr -> label, line
 let store = []; // display address
 let breaks = {}; // breakpoints
+let asserts = {}; // assertion
 
 ex3.ready = _=>{
   return buffer.length!=0;
@@ -25,10 +28,11 @@ ex3.load = (src,macro,log)=>{
   let failed = false;
   let macros = {};
   macro.split('\n').forEach(l=>{
-    let lz = l.split(' = ').map(e=>e.replace(/\t|\r/g," ").replace(/^ */,"").replace(/ *$/,""));
+    let lm = l.match(/^(.*) = ([^=]+)$/);
+    let lz = [lm[1],lm[2]].map(e=>e.replace(/\t|\r/g," ").replace(/^ */,"").replace(/ *$/,""));
     let m = lz[0].match(/^@([a-zA-Z_][a-zA-Z0-9_]*)(?: |$)/);
     if(m && m[1]){
-      let target = "^" + lz[0].replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&').replace(/\\\$\d/g,"([a-zA-Z][a-zA-Z0-9_]*)") + "$";
+      let target = "^" + lz[0].replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&').replace(/\\\$\d/g,"([a-zA-Z_][a-zA-Z0-9_]*)") + "$";
       let replacement = lz[1];
       if(macros[m[1]]==undefined)macros[m[1]] = [];
       macros[m[1]].push({raw:lz[0], regex:new RegExp(target), repl:replacement});
@@ -53,6 +57,7 @@ ex3.load = (src,macro,log)=>{
         }
         srcs[i] = srcs[i].replace(mc.regex,mc.repl).replace(/\t|\r/g,"");
         done = true;
+        break;
       }
       if(!done){
         failed = true;
@@ -72,6 +77,7 @@ ex3.load = (src,macro,log)=>{
   addrs = {};
   store = [];
   breaks = {};
+  asserts = {};
   let lineNum = 1;
   let curAddr = 0;
   let indirectRef = false;
@@ -129,12 +135,22 @@ ex3.load = (src,macro,log)=>{
       else if(token=="IMK")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
       else if(token=="END"){
         return;
-      }else if(token=="\n"){
-        lineNum++;
       }else if(token=="BREAK"){
         breaks[curAddr] = true;
       }else if(token=="ASSERT"){
-        console.log("po"); // TODO
+        const v1 = yield;
+        const ope = yield;
+        const v2 = yield;
+        function fail(){
+          log("L" + lineNum + ": Syntax error 'ASSERT " + v1 + " " + ope + " " + v2 + "'");
+          failed = true;
+        }
+        if(["==","!=",">=",">","<=","<"].indexOf(ope)==-1){fail();continue;}
+        const p1 = v1 == "AC" ? {ac:true} : "0123456789".indexOf(v1[0])==-1 ? {label:v1} : !isNaN(Number(v1)) ? {number:Number(v1)} : null;
+        const p2 = v2 == "AC" ? {ac:true} : "0123456789".indexOf(v2[0])==-1 ? {label:v2} : !isNaN(Number(v2)) ? {number:Number(v2)} : null;
+        if(!p1 || !p2){fail();continue;}
+        if(asserts[curAddr]==undefined)asserts[curAddr] = [];
+        asserts[curAddr].push({p1:p1,ope:ope,p2:p2});
       }else{
         const mrefOp = ["AND","ADD","LDA","STA","BUN","BSA","ISZ"];
         let ix = mrefOp.indexOf(token);
@@ -161,8 +177,13 @@ ex3.load = (src,macro,log)=>{
     if(ls.length <= cur)break;
     indirectRef = false;
     do{
-      token = ls[cur];
-      cur++;
+      while(1){
+        token = ls[cur];
+        cur++;
+        if(token=="\n"){
+          lineNum++;
+        }else break;
+      }
       if(ls[cur]==","){
         labels[token] = curAddr;
         addrs[curAddr] = {name:token,line:lineNum};
@@ -192,6 +213,7 @@ ex3.load = (src,macro,log)=>{
 let halter = null;
 let breaker = null;
 let stepper = null;
+let keyValue = 0;
 ex3.exec = (logDisp,memDisp,lineNum,render)=>{
   if(!ex3.ready())return;
   const mem = buffer.concat([]);
@@ -222,6 +244,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
   let clocks = 0;
   let steps = 0;
   let frameWait = 0;
+  let clkPerFrame = 0;
   const maxFrames = 800 * 512;
   let sleep = false;
   function insn(x){
@@ -270,7 +293,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
   function display(moveLine){
     let str;
     str = "";
-    str += steps + "STEP, " + clocks + "CLK\n";
+    str += steps + "STEPs, " + clocks + "CLKs (" + clkPerFrame + "CLKs/frame)\n";
     str += "PC=" + hex3(pc) + " (" + hex4(mem[pc]) + ", " + insn(mem[pc]) + ")\n";
     str += "L" + aux[pc] + ": " + srcs[aux[pc]-1] + "\n\n";
     str += "AC=" + ac + " (" + hex4(ac) + "), E=" + e + "\n";
@@ -331,7 +354,7 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
             movSprC[sprY]=((ac&0x3)<<6)|(movSprC[sprY]&0x3f);
           }
         }break;
-        case 0xF010 /* BTN */ : break;
+        case 0xF010 /* BTN */ : ac=keyValue;break;
         case 0xF008 /* SLP */ : sleep=true;break;
         default: toastr.error("Invalid instruction: " + hex4(op));halt=true;ex3.onCrash();break;
       }
@@ -357,21 +380,43 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
     }
   }
 
+  function matchAssert(cond){
+    if(!cond)return false;
+    for(let i=0;i<cond.length;i++){
+      let c = cond[i];
+      let v1 = c.p1.ac ? ac : c.p1.label ? mem[labels[c.p1.label]] : c.p1.number;
+      let v2 = c.p2.ac ? ac : c.p2.label ? mem[labels[c.p2.label]] : c.p2.number;
+      if(v1>=0x7fff)v1-=0x10000;
+      if(v2>=0x7fff)v2-=0x10000;
+      if(c.ope=="==" && v1!=v2)return true;
+      if(c.ope=="!=" && v1==v2)return true;
+      if(c.ope==">=" && v1<v2)return true;
+      if(c.ope==">" && v1<=v2)return true;
+      if(c.ope=="<=" && v1>v2)return true;
+      if(c.ope=="<" && v1>=v2)return true;
+    }
+    return false;
+  }
+
   halter = Q.emptyBox();
   breaker = Q.newBox(0);
   stepper = exe=>Q.do(function*(){
     if(halt)return;
+    let slept = false;
     if(exe){
       const clks = oneStep();
       clocks += clks;
+      clkPerFrame += clks;
       frameWait = 0;
       steps++;
       if(sleep){
         clocks = Math.ceil(clocks/maxFrames)*maxFrames;
         sleep = false;
+        slept = true;
       }
     }
     display(true);
+    if(slept)clkPerFrame = 0;
     if(halt)yield Q.putBox(halter,{});
   });
   Q.run(Q.join.any([Q.do(function*(){
@@ -382,20 +427,24 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
       let clks = oneStep();
       clocks += clks;
       frameWait += clks;
+      clkPerFrame += clks;
       steps++;
       if(halt)break;
       if(frameWait >= maxFrames || sleep){
         frameWait -= maxFrames;
+        let slept = false;
         if(sleep){
           clocks = Math.ceil(clocks/maxFrames)*maxFrames;
           frameWait = 0;
           sleep = false;
+          slept = true;
         }
         display(false);
+        if(slept)clkPerFrame=0;
         yield Q.waitMS(16);
         yield Q.readBox(breaker);
       }
-      if(breaks[pc]){
+      if(breaks[pc] || matchAssert(asserts[pc])){
         yield Q.takeBox(breaker);
         yield stepper(false);
         ex3.onBreak();
@@ -423,6 +472,12 @@ ex3.step = _=>{
 ex3.halt = _=>{
   if(halter)Q.run(Q.putBox(halter,{}));
 };
+ex3.keyChange = v=>{
+  keyValue = v;
+};
 ex3.onHalt = _=>_;
 ex3.onCrash = _=>_;
 ex3.onBreak = _=>_;
+
+return ex3;
+})();

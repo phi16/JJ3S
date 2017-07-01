@@ -57,6 +57,10 @@ body {
   border: 3px solid #777;
   border-radius: 3px;
   float: left;
+  outline: none;
+}
+#screen:focus{
+  border: 3px solid #ccc;
 }
 #screen.small {
   width: 320px;
@@ -336,20 +340,25 @@ canvas {
             <b>SLP</b>: 次のフレームになるまで待機します。
           </li>
         </ul>
-        現在 <b>BTN</b> が未実装。
         <h2>Macroの使い方</h2>
         サンプル見たらだいたいわかると思う。
-        ちなみに左右の区切りは空白込みで「 = 」です。
+        ちなみに左右の区切りは最後の「 = 」です。(空白込み)
         <h2>その他機能</h2>
-        <b>BREAK</b>と書くとそこにブレークポイントが仕込めます。
+        <b>BREAK</b> と書くとそこにブレークポイントが仕込めます。
         <br>
         通常実行時にそこに引っかかると一時停止し、好きにステップ実行などができます。
         <br>
         仕込まれる場所は「次の命令」なので、ラベルの前とかに書くと期待通りにいかないかも。
         <br>
         一度仕込むと実行中に消すとかできないのでめっちゃ不便。
+        <br><br>
+        <b>ASSERT 値1 比較演算 値2</b> と書くと条件を<b>満たさないとき</b>にブレークポイントが仕込めます。(スペース必須)
         <br>
-        条件付きブレークポイントとして<b>ASSERT</b>をそのうち実装したい。
+        メモリにはラベル・AC・数値のどれかを使えます。関係演算は「==, !=, >=, >, <=, <」のどれかです。
+        <br>
+        >=などでは値を-32768~32767として解釈するので注意してください。
+        <br>
+        数値を書くときには通常は10進数、0xをつけると16進数として解釈します。
         <br><br>
         あと開発者コンソールで <b>vim();</b> って打つとVimキーバインドになります。
         <br>
@@ -365,7 +374,7 @@ canvas {
     </div>
     <div id="display">
       <span>
-        <canvas id="screen" width="640" height="480" class="small"></canvas>
+        <canvas id="screen" width="640" height="480" class="small" tabindex='1'></canvas>
         <button type="button" id="sizing">Large</button>
         <div style="clear:left"></div>
       </span>
@@ -382,6 +391,124 @@ canvas {
     <script src="src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="ex3.js" type="text/javascript" charset="utf-8"></script>
     <script>
+let defaultSource = `    ORG 10
+LoopY,
+    CLA
+    STA X
+LoopX,
+    LDA X
+    SLX
+    LDA Y
+    SLY
+    LDA X
+    WRT
+    LDA Y
+    ROT
+
+    @inc X
+    @if (X>=W) goto LoopX
+
+    @inc Y
+    @if (Y>=H) goto LoopY
+
+Main,
+    LDA m1
+    SLX
+    LDA _0
+    SLY
+    LDA px
+    TRX
+    @inc px
+    @inc px
+    LDA py
+    TRY
+    @inc py
+    @inc py
+    LDA W
+    WRT
+    LDA _0
+    ROT
+    @if (py!=maxPY) goto Chara
+    LDA m16
+    STA px
+    STA py
+Chara,
+    LDA m1
+    SLX
+    LDA _1
+    SLY
+    LDA qx
+    TRX
+    LDA qy
+    TRY
+    LDA t
+    WRT
+    BTN
+    AND Left
+    @if (AC) goto moveLeft
+    BTN
+    AND Right
+    @if (AC) goto moveRight
+    BTN
+    AND Up
+    @if (AC) goto moveUp
+    BTN
+    AND Down
+    @if (AC) goto moveDown
+    BUN Done
+moveLeft,
+    @eq qx += m3
+    BUN Done
+moveRight,
+    @eq qx += _3
+    BUN Done
+moveUp,
+    @eq qy += m3
+    BUN Done
+moveDown,
+    @eq qy += _3
+    BUN Done
+Done,
+    BTN
+    SEG
+End,
+    SLP
+    BUN Main
+
+px, DEC 0
+py, DEC 0
+qx, DEC 0
+qy, DEC 0
+t,  DEC 60
+
+X,  DEC 0
+Y,  DEC 0
+W,  DEC 40
+H,  DEC 30
+maxPY, DEC 480
+
+m1,  DEC -1
+m3,  DEC -3
+m16, DEC -16
+_0,  DEC 0
+_1,  DEC 1
+_2,  DEC 2
+_3,  DEC 3
+
+Left,  HEX 8
+Down,  HEX 4
+Up,    HEX 2
+Right, HEX 1`;
+let defaultMacro = `@inc $1 = ISZ $1; CLA
+@if ($1+$2) goto $3 = LDA $1; ADD $2; SZA; BUN $3
+@if ($1!=$2) goto $3 = LDA $1; CMA; INC; ADD $2; SZA; BUN $3
+@if (AC) goto $1 = SZA; BUN $1
+@if ($1) goto $2 = LDA $1; SZA; BUN $2
+@if ($1>=$2) goto $3 = LDA $2; CMA; INC; ADD $1; SPA; BUN $3
+@if ($1<$2) goto $3 = LDA $2; CMA; INC; ADD $1; SNA; BUN $3
+@eq $1 = $2 + $3 = LDA $2; ADD $3; STA $1
+@eq $1 += $2 = LDA $1; ADD $2; STA $1`;
+
 let vim,emacs;
 $(_=>{
   $("#tab").tabs();
@@ -420,43 +547,13 @@ $(_=>{
   if(initSource){
     editor.session.getDocument().setValue(initSource);
   }else{
-    editor.session.getDocument().setValue(
-    `    ORG 10
-LoopY,
-    STA X
-LoopX,
-    LDA X
-    SLX
-    LDA Y
-    SLY
-    LDA X
-    WRT
-    LDA Y
-    ROT
-
-    @inc X
-    @if (X>=W) goto LoopX
-
-    @inc Y
-    @if (Y>=H) goto LoopY
-
-    HLT
-
-X,  DEC 0
-Y,  DEC 0
-W,  DEC 40
-H,  DEC 30`);
+    editor.session.getDocument().setValue(defaultSource);
   }
   const initMacro = localStorage.getItem('macro');
   if(initMacro){
     macroEditor.session.getDocument().setValue(initMacro);
   }else{
-    macroEditor.session.getDocument().setValue(
-      `@inc $1 = ISZ $1
-@if ($1+$2) goto $3 = LDA $1; ADD $2; SZA; BUN $3
-@if ($1) goto $2 = LDA $1; SZA; BUN $2
-@if ($1>=$2) goto $3 = LDA $2; CMA; INC; ADD $1; SPA; BUN $3
-@if ($1<$2) goto $3 = LDA $2; CMA; INC; ADD $1; SNA; BUN $3`);
+    macroEditor.session.getDocument().setValue(defaultMacro);
   }
 
   let editTimer = null;
@@ -513,10 +610,20 @@ H,  DEC 30`);
         ctx.translate(x+8,y+8);
         ctx.rotate(-Math.PI/2*kr);
         ctx.translate(-x-8,-y-8);
-        ctx.drawImage(spriteMap,ki*16,kj*16,16,16,y,x,16,16);
+        ctx.drawImage(spriteMap,ki*16,kj*16,16,16,x,y,16,16);
         ctx.restore();
       }
     };
+    let keyStats = 0;
+    let keyMap = {37:8,38:2,39:1,40:4};
+    cvs.addEventListener("keydown",e=>{
+      if(keyMap[e.keyCode])keyStats|=keyMap[e.keyCode];
+      ex3.keyChange(keyStats);
+    });
+    cvs.addEventListener("keyup",e=>{
+      if(keyMap[e.keyCode])keyStats&=~keyMap[e.keyCode];
+      ex3.keyChange(keyStats);
+    });
   }
 
   let running = false;
