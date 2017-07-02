@@ -51,22 +51,21 @@ body {
   flex-direction: column;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
 }
-#screen {
-  margin-left: 5px;
-  margin-top: 5px;
+#ideal, #actual {
   border: 3px solid #777;
   border-radius: 3px;
-  float: left;
+  margin-left: 3px;
+  margin-top: 8px;
   outline: none;
 }
-#screen:focus{
+#ideal:focus, #actual:focus {
   border: 3px solid #ccc;
 }
-#screen.small {
+.screen.small {
   width: 320px;
   height: 240px;
 }
-#screen.large {
+.screen.large {
   width: 640px;
   height: 480px;
 }
@@ -239,6 +238,17 @@ canvas {
 #load {
   margin-top: 0px;
 }
+#screens > ul {
+  background: #222;
+}
+#sizing {
+  margin-top: 5px;
+  margin-left: 75px;
+  width: 60px;
+  height: 30px;
+  font-size: 15px;
+  opacity: 0.6;
+}
     </style>
   </head>
   <body>
@@ -373,10 +383,15 @@ canvas {
       </div>
     </div>
     <div id="display">
-      <span>
-        <canvas id="screen" width="640" height="480" class="small" tabindex='1'></canvas>
-        <button type="button" id="sizing">Large</button>
-        <div style="clear:left"></div>
+        <div id="screens">
+          <ul>
+            <li><a href="#ideal">Ideal</a></li>
+            <li><a href="#actual">Actual</a></li>
+            <button type="button" id="sizing">Large</button>
+          </ul>
+          <canvas id="ideal" width="640" height="480" class="screen small" style="display:block" tabindex='1'></canvas>
+          <canvas id="actual" width="640" height="480" class="screen small" style="display:block" tabindex='1'></canvas>
+        </div>
       </span>
       <div id="buttons">
         <button type="button" id="exec">Execute</button>
@@ -512,6 +527,7 @@ let defaultMacro = `@inc $1 = ISZ $1; CLA
 let vim,emacs;
 $(_=>{
   $("#tab").tabs();
+  $("#screens").tabs();
   const logElem = document.getElementById("log");
   const memElem = document.getElementById("mem");
   let reset = _=>_;
@@ -589,7 +605,7 @@ $(_=>{
   let render = _=>_;
   let spriteMap = new Image();
   if(1){
-    const cvs = document.getElementById("screen");
+    const cvs = document.getElementById("ideal");
     const ctx = cvs.getContext('2d');
     ctx.fillStyle = "black";
     ctx.fillRect(0,0,640,480);
@@ -631,6 +647,15 @@ $(_=>{
       ex3.keyChange(keyStats);
     });
     cvs.addEventListener("keyup",e=>{
+      if(keyMap[e.keyCode])keyStats&=~keyMap[e.keyCode];
+      ex3.keyChange(keyStats);
+    });
+    const cvs2 = document.getElementById("actual");
+    cvs2.addEventListener("keydown",e=>{
+      if(keyMap[e.keyCode])keyStats|=keyMap[e.keyCode];
+      ex3.keyChange(keyStats);
+    });
+    cvs2.addEventListener("keyup",e=>{
       if(keyMap[e.keyCode])keyStats&=~keyMap[e.keyCode];
       ex3.keyChange(keyStats);
     });
@@ -793,12 +818,14 @@ $(_=>{
   let smallScreen = true;
   sizingBtn.addEventListener("click",_=>{
     if(smallScreen){
-      $("#screen")[0].className = "large";
+      $("#ideal")[0].className="screen large";
+      $("#actual")[0].className="screen large";
       sizingBtn.textContent = "Small";
       smallScreen = false;
       localStorage.setItem('sizing',"large");
     }else{
-      $("#screen")[0].className = "small";
+      $("#ideal")[0].className="screen small";
+      $("#actual")[0].className="screen small";
       sizingBtn.textContent = "Large";
       smallScreen = true;
       localStorage.setItem('sizing',"small");
