@@ -215,7 +215,7 @@ let halter = null;
 let breaker = null;
 let stepper = null;
 let keyValue = 0;
-ex3.exec = (logDisp,memDisp,lineNum,render)=>{
+ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
   if(!ex3.ready())return;
   const mem = buffer.concat([]);
   let halt = false;
@@ -315,7 +315,8 @@ ex3.exec = (logDisp,memDisp,lineNum,render)=>{
     });
     memDisp(str);
     if(moveLine)lineNum(aux[pc]);
-    render(field,movSprC,movSprX,movSprY);
+    iRender(field,movSprC,movSprX,movSprY);
+    aRender(field,movSprC,movSprX,movSprY);
   }
 
   function oneStep(){

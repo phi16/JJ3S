@@ -409,7 +409,7 @@ canvas {
     <script src="src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="ex3.js" type="text/javascript" charset="utf-8"></script>
     <script>
-let defaultSource = `    ORG 10
+const defaultSource = `    ORG 10
 LoopY,
     CLA
     STA X
@@ -517,7 +517,8 @@ Left,  HEX 8
 Down,  HEX 4
 Up,    HEX 2
 Right, HEX 1`;
-let defaultMacro = `@inc $1 = ISZ $1; CLA
+
+const defaultMacro = `@inc $1 = ISZ $1; CLA
 @if ($1+$2) goto $3 = LDA $1; ADD $2; SZA; BUN $3
 @if ($1!=$2) goto $3 = LDA $1; CMA; INC; ADD $2; SZA; BUN $3
 @if (AC) goto $1 = SZA; BUN $1
@@ -526,6 +527,22 @@ let defaultMacro = `@inc $1 = ISZ $1; CLA
 @if ($1<$2) goto $3 = LDA $2; CMA; INC; ADD $1; SNA; BUN $3
 @eq $1 = $2 + $3 = LDA $2; ADD $3; STA $1
 @eq $1 += $2 = LDA $1; ADD $2; STA $1`;
+
+const vShader = `
+precision mediump float;
+attribute vec2 position;
+varying vec2 coord;
+void main(){
+  coord = position/480.0;
+}
+`;
+const fShader = `
+precision mediump float;
+varying vec2 coord;
+void main(){
+  gl_FragColor = vec4(1,0,0,1);
+}
+`;
 
 let vim,emacs;
 $(_=>{
@@ -605,7 +622,8 @@ $(_=>{
     else if(im=="emacs")emacs();
   }
 
-  let render = _=>_;
+  let idealRender = _=>_;
+  let actualRender = _=>_;
   let spriteMap = new Image();
   if(1){
     const cvs = document.getElementById("ideal");
@@ -613,7 +631,7 @@ $(_=>{
     ctx.fillStyle = "black";
     ctx.fillRect(0,0,640,480);
     ctx.imageSmoothingEnabled = false;
-    render = (map,mvc,mvx,mvy)=>{
+    idealRender = (map,mvc,mvx,mvy)=>{
       for(let i=0;i<30;i++){
         for(let j=0;j<40;j++){
           let k = map[i][j];
@@ -643,8 +661,63 @@ $(_=>{
         ctx.restore();
       }
     };
+  }
+  if(1){
+    const cvs = document.getElementById("actual");
+    const gl = cvs.getContext('webgl');
+    const verts = [0,0,0,1,1,0,1,1];
+    const vbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);
+    gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+    gl.enable(gl.BLEND);
+    gl.disable(gl.DEPTH_TEST);
+    gl.viewport(0,0,640,480);
+    gl.clearColor(0,0,0,1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    function compile(){
+      const vs = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(vs,vShader);
+      gl.compileShader(vs);
+      if(!gl.getShaderParameter(vs,gl.COMPILE_STATUS)){
+        console.error(gl.getShaderInfoLog(vs));
+        return;
+      }
+      const fs = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fs,fShader);
+      gl.compileShader(fs);
+      if(!gl.getShaderParameter(fs,gl.COMPILE_STATUS)){
+        console.error(gl.getShaderInfoLog(fs));
+        return;
+      }
+      const pr = gl.createProgram();
+      gl.attachShader(pr,vs);
+      gl.attachShader(pr,fs);
+      gl.linkProgram(pr);
+      if(!gl.getProgramParameter(pr,gl.LINK_STATUS)){
+        console.error(gl.getProgramInfoLog(pr));
+        return;
+      }
+      gl.useProgram(pr);
+      let posLocation = gl.getAttribLocation(pr,"position");
+      gl.enableVertexAttribArray(posLocation);
+      gl.vertexAttribPointer(posLocation,2,gl.FLOAT,false,0,0);
+    }
+    compile();
+    actualRender = (map,mvc,mvx,mvy)=>{
+      gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+      gl.flush();
+    };
+    setTimeout(_=>{
+      actualRender();
+    },200);
+  }
+
+  if(1){
     let keyStats = 0;
     let keyMap = {37:8,38:2,39:1,40:4};
+    const cvs = document.getElementById("ideal");
     cvs.addEventListener("keydown",e=>{
       if(keyMap[e.keyCode])keyStats|=keyMap[e.keyCode];
       ex3.keyChange(keyStats);
@@ -678,7 +751,7 @@ $(_=>{
       return;
     }
     if(!running){
-      ex3.exec(writeLog,writeMem,moveLine,render);
+      ex3.exec(writeLog,writeMem,moveLine,idealRender,actualRender);
       running = true;
       breaking = false;
       execBtn.textContent = "Halt";
