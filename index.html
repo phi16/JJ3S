@@ -545,16 +545,31 @@ varying vec2 coord;
 uniform sampler2D sprite;
 uniform sampler2D map;
 uniform vec2 resolution;
+uniform ivec3 moves[5];
 void main(){
   vec2 pos = coord/resolution;
-  vec2 difPos = coord-floor(coord/16.)*16.;
-  vec2 mapPos = floor(coord/16.)/vec2(64,32);
-  float sid = floor(texture2D(map,mapPos).a*256.);
-  vec2 sprPos = vec2(mod(sid,8.),floor(mod(sid,64.)/8.))*16.;
-  float sprRot = floor(sid/64.)*3.1415926535/2.;
-  mat2 rotMat = mat2(cos(sprRot),-sin(sprRot),sin(sprRot),cos(sprRot));
-  vec2 realDifPos = (difPos-vec2(8,8))*rotMat+vec2(8,8);
-  gl_FragColor = texture2D(sprite,(sprPos+realDifPos)/128.);
+  if(true){
+    vec2 difPos = coord-floor(coord/16.)*16.;
+    vec2 mapPos = floor(coord/16.)/vec2(64,32);
+    float sid = floor(texture2D(map,mapPos).a*256.);
+    vec2 sprPos = vec2(mod(sid,8.),floor(mod(sid,64.)/8.))*16.;
+    float sprRot = floor(sid/64.)*3.1415926535/2.;
+    mat2 rotMat = mat2(cos(sprRot),-sin(sprRot),sin(sprRot),cos(sprRot));
+    vec2 realDifPos = (difPos-vec2(8,8))*rotMat+vec2(8,8);
+    gl_FragColor = texture2D(sprite,(sprPos+realDifPos)/128.);
+  }
+  for(int i=0;i<5;i++){
+    vec2 relPos = coord-vec2(moves[i].xy);
+    if(0.<=relPos.x && 0.<=relPos.y && relPos.x<16. && relPos.y<16.){
+      float sid = float(moves[i].z);
+      vec2 sprPos = vec2(mod(sid,8.),floor(mod(sid,64.)/8.))*16.;
+      float sprRot = floor(sid/64.)*3.1415926535/2.;
+      mat2 rotMat = mat2(cos(sprRot),-sin(sprRot),sin(sprRot),cos(sprRot));
+      vec2 realDifPos = (relPos-vec2(8,8))*rotMat+vec2(8,8);
+      vec4 col = texture2D(sprite,(sprPos+realDifPos)/128.);
+      gl_FragColor = gl_FragColor*(1.-col.a) + col*col.a;
+    }
+  }
 }
 `;
 
@@ -719,7 +734,7 @@ $(_=>{
     };
 
     let spriteLocation, resolutionLocation;
-    let mapLocation;
+    let mapLocation, movesLocations;
     function compile(){
       const vs = gl.createShader(gl.VERTEX_SHADER);
       gl.shaderSource(vs,vShader);
@@ -753,11 +768,18 @@ $(_=>{
       gl.uniform2f(resolutionLocation,640,480);
       mapLocation = gl.getUniformLocation(pr,"map");
       gl.uniform1i(mapLocation,1);
+      movesLocations = [];
+      for(let i=0;i<5;i++){
+        movesLocations[i] = gl.getUniformLocation(pr,"moves["+i+"]");
+      }
       return true;
     }
     if(compile()){
       actualRender = (map,mvc,mvx,mvy)=>{
         mapChanged(map);
+        for(let i=0;i<5;i++){
+          gl.uniform3i(movesLocations[i],mvx[i],mvy[i],mvc[i]);
+        }
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
         gl.flush();
