@@ -532,15 +532,29 @@ const vShader = `
 precision mediump float;
 attribute vec2 position;
 varying vec2 coord;
+uniform vec2 resolution;
 void main(){
-  coord = position/480.0;
+  gl_Position = vec4(position,0,1);
+  vec2 pos = position*0.5+0.5;
+  coord = vec2(pos.x,1.-pos.y)*resolution;
 }
 `;
 const fShader = `
 precision mediump float;
 varying vec2 coord;
+uniform sampler2D sprite;
+uniform sampler2D map;
+uniform vec2 resolution;
 void main(){
-  gl_FragColor = vec4(1,0,0,1);
+  vec2 pos = coord/resolution;
+  vec2 difPos = coord-floor(coord/16.)*16.;
+  vec2 mapPos = floor(coord/16.)/vec2(64,32);
+  float sid = floor(texture2D(map,mapPos).a*256.);
+  vec2 sprPos = vec2(mod(sid,8.),floor(mod(sid,64.)/8.))*16.;
+  float sprRot = floor(sid/64.)*3.1415926535/2.;
+  mat2 rotMat = mat2(cos(sprRot),-sin(sprRot),sin(sprRot),cos(sprRot));
+  vec2 realDifPos = (difPos-vec2(8,8))*rotMat+vec2(8,8);
+  gl_FragColor = texture2D(sprite,(sprPos+realDifPos)/128.);
 }
 `;
 
@@ -624,6 +638,8 @@ $(_=>{
 
   let idealRender = _=>_;
   let actualRender = _=>_;
+  let imageLoaded = _=>_;
+  let mapChanged = _=>_;
   let spriteMap = new Image();
   if(1){
     const cvs = document.getElementById("ideal");
@@ -665,7 +681,7 @@ $(_=>{
   if(1){
     const cvs = document.getElementById("actual");
     const gl = cvs.getContext('webgl');
-    const verts = [0,0,0,1,1,0,1,1];
+    const verts = [-1,-1,-1,1,1,-1,1,1];
     const vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);
@@ -675,21 +691,49 @@ $(_=>{
     gl.viewport(0,0,640,480);
     gl.clearColor(0,0,0,1);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    const sprTex = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D,sprTex);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+    imageLoaded = _=>{
+      gl.bindTexture(gl.TEXTURE_2D,sprTex);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,spriteMap);
+      gl.generateMipmap(gl.TEXTURE_2D);
+    };
+    const mapTex = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D,mapTex);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+    const mapArray = new Uint8Array(64*32);
+    mapChanged = m=>{
+      for(let j=0;j<30;j++){
+        for(let i=0;i<40;i++){
+          mapArray[j*64+i] = m[j][i];
+        }
+      }
+      gl.bindTexture(gl.TEXTURE_2D,mapTex);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.ALPHA,64,32,0,gl.ALPHA,gl.UNSIGNED_BYTE,mapArray);
+      gl.generateMipmap(gl.TEXTURE_2D);
+    };
 
+    let spriteLocation, resolutionLocation;
+    let mapLocation;
     function compile(){
       const vs = gl.createShader(gl.VERTEX_SHADER);
       gl.shaderSource(vs,vShader);
       gl.compileShader(vs);
       if(!gl.getShaderParameter(vs,gl.COMPILE_STATUS)){
         console.error(gl.getShaderInfoLog(vs));
-        return;
+        return false;
       }
       const fs = gl.createShader(gl.FRAGMENT_SHADER);
       gl.shaderSource(fs,fShader);
       gl.compileShader(fs);
       if(!gl.getShaderParameter(fs,gl.COMPILE_STATUS)){
         console.error(gl.getShaderInfoLog(fs));
-        return;
+        return false;
       }
       const pr = gl.createProgram();
       gl.attachShader(pr,vs);
@@ -697,21 +741,28 @@ $(_=>{
       gl.linkProgram(pr);
       if(!gl.getProgramParameter(pr,gl.LINK_STATUS)){
         console.error(gl.getProgramInfoLog(pr));
-        return;
+        return false;
       }
       gl.useProgram(pr);
       let posLocation = gl.getAttribLocation(pr,"position");
       gl.enableVertexAttribArray(posLocation);
       gl.vertexAttribPointer(posLocation,2,gl.FLOAT,false,0,0);
+      spriteLocation = gl.getUniformLocation(pr,"sprite");
+      gl.uniform1i(spriteLocation,0);
+      resolutionLocation = gl.getUniformLocation(pr,"resolution");
+      gl.uniform2f(resolutionLocation,640,480);
+      mapLocation = gl.getUniformLocation(pr,"map");
+      gl.uniform1i(mapLocation,1);
+      return true;
     }
-    compile();
-    actualRender = (map,mvc,mvx,mvy)=>{
-      gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-      gl.flush();
-    };
-    setTimeout(_=>{
-      actualRender();
-    },200);
+    if(compile()){
+      actualRender = (map,mvc,mvx,mvy)=>{
+        mapChanged(map);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+        gl.flush();
+      };
+    }
   }
 
   if(1){
@@ -869,6 +920,7 @@ $(_=>{
             ctx.drawImage(img,i*16,j*16,16,16,i*65,j*65,64,64);
           }
         }
+        imageLoaded();
       };
     }
     function loadImage(f){
