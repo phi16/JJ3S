@@ -542,6 +542,7 @@ void main(){
 const fShader = `
 precision mediump float;
 varying vec2 coord;
+uniform sampler2D prevFrame;
 uniform sampler2D sprite;
 uniform sampler2D map;
 uniform vec2 resolution;
@@ -550,7 +551,7 @@ uniform int frame1,frame2;
 void main(){
   ivec2 ic = ivec2(coord);
   if(frame1!=-1 && (ic.x+ic.y*800<frame1 || frame2<=ic.x+ic.y*800)){
-    discard;
+    gl_FragColor = texture2D(prevFrame,vec2(coord.x,resolution.y-coord.y)/vec2(1024,512));
     return;
   }
   if(true){
@@ -578,6 +579,26 @@ void main(){
       gl_FragColor = gl_FragColor*(1.-col.a) + col*col.a;
     }
   }
+}
+`;
+
+const vScreenShader = `
+precision mediump float;
+attribute vec2 position;
+varying vec2 coord;
+uniform vec2 resolution;
+void main(){
+  gl_Position = vec4(position,0,1);
+  vec2 pos = position*0.5+0.5;
+  coord = pos*resolution;
+}
+`;
+const fScreenShader = `
+precision mediump float;
+varying vec2 coord;
+uniform sampler2D buffer;
+void main(){
+  gl_FragColor = texture2D(buffer,coord/vec2(1024,512));
 }
 `;
 
@@ -720,6 +741,7 @@ $(_=>{
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
     imageLoaded = _=>{
+      gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D,sprTex);
       gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,spriteMap);
       gl.generateMipmap(gl.TEXTURE_2D);
@@ -736,14 +758,32 @@ $(_=>{
           mapArray[j*64+i] = m[j][i];
         }
       }
+      gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D,mapTex);
       gl.texImage2D(gl.TEXTURE_2D,0,gl.ALPHA,64,32,0,gl.ALPHA,gl.UNSIGNED_BYTE,mapArray);
       gl.generateMipmap(gl.TEXTURE_2D);
     };
+    const prevFrameTexs = [], framebuffers = [];
+    for(let i=0;i<2;i++){
+      let tex = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D,tex);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1024,512,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      let fb = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER,fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+      prevFrameTexs.push(tex);
+      framebuffers.push(fb);
+    }
 
-    let spriteLocation, resolutionLocation;
-    let mapLocation, movesLocations, frame1Location, frame2Location;
-    function compile(){
+    let toBuffer, toScreen;
+    let prevFrameLocation, bufferLocation;
+    let movesLocations, frame1Location, frame2Location;
+    function compileBufferRender(){
       const vs = gl.createShader(gl.VERTEX_SHADER);
       gl.shaderSource(vs,vShader);
       gl.compileShader(vs);
@@ -770,11 +810,11 @@ $(_=>{
       let posLocation = gl.getAttribLocation(pr,"position");
       gl.enableVertexAttribArray(posLocation);
       gl.vertexAttribPointer(posLocation,2,gl.FLOAT,false,0,0);
-      spriteLocation = gl.getUniformLocation(pr,"sprite");
+      let spriteLocation = gl.getUniformLocation(pr,"sprite");
       gl.uniform1i(spriteLocation,0);
-      resolutionLocation = gl.getUniformLocation(pr,"resolution");
+      let resolutionLocation = gl.getUniformLocation(pr,"resolution");
       gl.uniform2f(resolutionLocation,640,480);
-      mapLocation = gl.getUniformLocation(pr,"map");
+      let mapLocation = gl.getUniformLocation(pr,"map");
       gl.uniform1i(mapLocation,1);
       movesLocations = [];
       for(let i=0;i<5;i++){
@@ -782,21 +822,53 @@ $(_=>{
       }
       frame1Location = gl.getUniformLocation(pr,"frame1");
       frame2Location = gl.getUniformLocation(pr,"frame2");
+      prevFrameLocation = gl.getUniformLocation(pr,"prevFrame");
+      gl.uniform1i(prevFrameLocation,2);
+      toBuffer = pr;
       return true;
     }
-    if(compile()){
-      actualRender = (map,mvc,mvx,mvy,bmap,bmvc,bmvx,bmvy,maxFrames,frame1,frame2)=>{
-        console.log(frame1,frame2);
-        if(frame1==0 && frame2==maxFrames){
-          gl.clear(gl.COLOR_BUFFER_BIT);
-        }
-        /*mapChanged(bmap);
-        for(let i=0;i<5;i++){
-          gl.uniform3i(movesLocations[i],bmvx[i],bmvy[i],bmvc[i]);
-        }
-        gl.uniform1i(frame1Location,-1);
-        gl.uniform1i(frame2Location,-1);
-        gl.drawArrays(gl.TRIANGLE_STRIP,0,4);*/
+    function compileScreenRender(){
+      const vs = gl.createShader(gl.VERTEX_SHADER);
+      gl.shaderSource(vs,vScreenShader);
+      gl.compileShader(vs);
+      if(!gl.getShaderParameter(vs,gl.COMPILE_STATUS)){
+        console.error(gl.getShaderInfoLog(vs));
+        return false;
+      }
+      const fs = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(fs,fScreenShader);
+      gl.compileShader(fs);
+      if(!gl.getShaderParameter(fs,gl.COMPILE_STATUS)){
+        console.error(gl.getShaderInfoLog(fs));
+        return false;
+      }
+      const pr = gl.createProgram();
+      gl.attachShader(pr,vs);
+      gl.attachShader(pr,fs);
+      gl.linkProgram(pr);
+      if(!gl.getProgramParameter(pr,gl.LINK_STATUS)){
+        console.error(gl.getProgramInfoLog(pr));
+        return false;
+      }
+      gl.useProgram(pr);
+      let posLocation = gl.getAttribLocation(pr,"position");
+      gl.enableVertexAttribArray(posLocation);
+      gl.vertexAttribPointer(posLocation,2,gl.FLOAT,false,0,0);
+      let resolutionLocation = gl.getUniformLocation(pr,"resolution");
+      gl.uniform2f(resolutionLocation,640,480);
+      bufferLocation = gl.getUniformLocation(pr,"buffer");
+      gl.uniform1i(bufferLocation,2);
+      toScreen = pr;
+      return true;
+    }
+    if(compileBufferRender() && compileScreenRender()){
+      let rid = 0;
+      actualRender = (map,mvc,mvx,mvy,maxFrames,frame1,frame2)=>{
+        gl.bindFramebuffer(gl.FRAMEBUFFER,framebuffers[rid]);
+        gl.useProgram(toBuffer);
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D,prevFrameTexs[1-rid]);
+        gl.clear(gl.COLOR_BUFFER_BIT);
         mapChanged(map);
         for(let i=0;i<5;i++){
           gl.uniform3i(movesLocations[i],mvx[i],mvy[i],mvc[i]);
@@ -804,7 +876,14 @@ $(_=>{
         gl.uniform1i(frame1Location,frame1);
         gl.uniform1i(frame2Location,frame2);
         gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
-        gl.flush();
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+        gl.useProgram(toScreen);
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D,prevFrameTexs[rid]);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+        rid++;rid%=2;
       };
     }
   }

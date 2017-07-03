@@ -241,10 +241,6 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
     movSprX.push(0x7fff);
     movSprY.push(0x7fff);
   }
-  let bField = field;
-  let bMovSprC = movSprC;
-  let bMovSprX = movSprX;
-  let bMovSprY = movSprY;
 
   let clocks = 0;
   let steps = 0;
@@ -320,16 +316,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
     memDisp(str);
     if(moveLine)lineNum(aux[pc]);
     iRender(field,movSprC,movSprX,movSprY);
-    aRender(field,movSprC,movSprX,movSprY,bField,bMovSprC,bMovSprX,bMovSprY,maxFrames,frame1,frame2);
-  }
-  function cloneScreen(){
-    bField = [];
-    field.forEach(f=>{
-      bField.push([].concat(f));
-    });
-    bMovSprC = [].concat(movSprC);
-    bMovSprX = [].concat(movSprX);
-    bMovSprY = [].concat(movSprY);
+    aRender(field,movSprC,movSprX,movSprY,maxFrames,frame1,frame2);
   }
 
   function oneStep(){
@@ -437,7 +424,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
       }
     }
     display(true,f1,f2);
-    if(slept)clkPerFrame=0,cloneScreen();
+    if(slept)clkPerFrame=0;
     if(halt)yield Q.putBox(halter,{});
   });
   Q.run(Q.join.any([Q.do(function*(){
@@ -460,7 +447,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
           slept = true;
         }
         display(false,0,maxFrames);
-        if(slept)clkPerFrame=0,cloneScreen();
+        if(slept)clkPerFrame=0;
         yield Q.waitMS(16);
         yield Q.readBox(breaker);
       }
