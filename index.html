@@ -546,8 +546,13 @@ uniform sampler2D sprite;
 uniform sampler2D map;
 uniform vec2 resolution;
 uniform ivec3 moves[5];
+uniform int frame1,frame2;
 void main(){
-  vec2 pos = coord/resolution;
+  ivec2 ic = ivec2(coord);
+  if(frame1!=-1 && (ic.x+ic.y*800<frame1 || frame2<=ic.x+ic.y*800)){
+    discard;
+    return;
+  }
   if(true){
     vec2 difPos = coord-floor(coord/16.)*16.;
     vec2 mapPos = floor(coord/16.)/vec2(64,32);
@@ -559,7 +564,10 @@ void main(){
     gl_FragColor = texture2D(sprite,(sprPos+realDifPos)/128.);
   }
   for(int i=0;i<5;i++){
-    vec2 relPos = coord-vec2(moves[i].xy);
+    ivec2 p = moves[i].xy;
+    if(p.x>0x8000)p.x-=0x10000;
+    if(p.y>0x8000)p.y-=0x10000;
+    vec2 relPos = coord-vec2(p);
     if(0.<=relPos.x && 0.<=relPos.y && relPos.x<16. && relPos.y<16.){
       float sid = float(moves[i].z);
       vec2 sprPos = vec2(mod(sid,8.),floor(mod(sid,64.)/8.))*16.;
@@ -734,7 +742,7 @@ $(_=>{
     };
 
     let spriteLocation, resolutionLocation;
-    let mapLocation, movesLocations;
+    let mapLocation, movesLocations, frame1Location, frame2Location;
     function compile(){
       const vs = gl.createShader(gl.VERTEX_SHADER);
       gl.shaderSource(vs,vShader);
@@ -772,15 +780,29 @@ $(_=>{
       for(let i=0;i<5;i++){
         movesLocations[i] = gl.getUniformLocation(pr,"moves["+i+"]");
       }
+      frame1Location = gl.getUniformLocation(pr,"frame1");
+      frame2Location = gl.getUniformLocation(pr,"frame2");
       return true;
     }
     if(compile()){
-      actualRender = (map,mvc,mvx,mvy)=>{
+      actualRender = (map,mvc,mvx,mvy,bmap,bmvc,bmvx,bmvy,maxFrames,frame1,frame2)=>{
+        console.log(frame1,frame2);
+        if(frame1==0 && frame2==maxFrames){
+          gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+        /*mapChanged(bmap);
+        for(let i=0;i<5;i++){
+          gl.uniform3i(movesLocations[i],bmvx[i],bmvy[i],bmvc[i]);
+        }
+        gl.uniform1i(frame1Location,-1);
+        gl.uniform1i(frame2Location,-1);
+        gl.drawArrays(gl.TRIANGLE_STRIP,0,4);*/
         mapChanged(map);
         for(let i=0;i<5;i++){
           gl.uniform3i(movesLocations[i],mvx[i],mvy[i],mvc[i]);
         }
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.uniform1i(frame1Location,frame1);
+        gl.uniform1i(frame2Location,frame2);
         gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
         gl.flush();
       };
@@ -850,7 +872,7 @@ $(_=>{
       return;
     }
     if(!running){
-      ex3.exec(writeLog,writeMem,moveLine,render);
+      ex3.exec(writeLog,writeMem,moveLine,idealRender,actualRender);
       running = true;
       breaking = true;
       execBtn.textContent = "Resume";

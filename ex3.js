@@ -241,6 +241,10 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
     movSprX.push(0x7fff);
     movSprY.push(0x7fff);
   }
+  let bField = field;
+  let bMovSprC = movSprC;
+  let bMovSprX = movSprX;
+  let bMovSprY = movSprY;
 
   let clocks = 0;
   let steps = 0;
@@ -291,7 +295,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
       return s;
     }
   }
-  function display(moveLine){
+  function display(moveLine,frame1,frame2){
     let str;
     str = "";
     str += steps + "STEPs, " + clocks + "CLKs (" + clkPerFrame + "CLKs/frame)\n";
@@ -316,7 +320,16 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
     memDisp(str);
     if(moveLine)lineNum(aux[pc]);
     iRender(field,movSprC,movSprX,movSprY);
-    aRender(field,movSprC,movSprX,movSprY);
+    aRender(field,movSprC,movSprX,movSprY,bField,bMovSprC,bMovSprX,bMovSprY,maxFrames,frame1,frame2);
+  }
+  function cloneScreen(){
+    bField = [];
+    field.forEach(f=>{
+      bField.push([].concat(f));
+    });
+    bMovSprC = [].concat(movSprC);
+    bMovSprX = [].concat(movSprX);
+    bMovSprY = [].concat(movSprY);
   }
 
   function oneStep(){
@@ -405,6 +418,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
   stepper = exe=>Q.do(function*(){
     if(halt)return;
     let slept = false;
+    let f1=0,f2=0;
     if(exe){
       const clks = oneStep();
       clocks += clks;
@@ -415,14 +429,18 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
         clocks = Math.ceil(clocks/maxFrames)*maxFrames;
         sleep = false;
         slept = true;
+        f1=0;
+        f2=maxFrames;
+      }else{
+        f1=clkPerFrame-clks;
+        f2=clkPerFrame;
       }
     }
-    display(true);
-    if(slept)clkPerFrame = 0;
+    display(true,f1,f2);
+    if(slept)clkPerFrame=0,cloneScreen();
     if(halt)yield Q.putBox(halter,{});
   });
   Q.run(Q.join.any([Q.do(function*(){
-    display(false);
     yield Q.waitMS(16);
     yield Q.readBox(breaker);
     while(1){
@@ -441,8 +459,8 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
           sleep = false;
           slept = true;
         }
-        display(false);
-        if(slept)clkPerFrame=0;
+        display(false,0,maxFrames);
+        if(slept)clkPerFrame=0,cloneScreen();
         yield Q.waitMS(16);
         yield Q.readBox(breaker);
       }
@@ -453,7 +471,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
         yield Q.readBox(breaker);
       }
     }
-    display(true);
+    display(true,0,maxFrames);
   }),Q.do(function*(){
     yield Q.takeBox(halter);
     halter = breaker = stepper = null;
