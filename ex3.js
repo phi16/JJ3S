@@ -125,6 +125,7 @@ ex3.load = (src,macro,log)=>{
       else if(token=="ROT")setLine(), buffer[curAddr++] = 0xF020;
       else if(token=="BTN")setLine(), buffer[curAddr++] = 0xF010;
       else if(token=="SLP")setLine(), buffer[curAddr++] = 0xF008;
+      else if(token=="RND")setLine(), buffer[curAddr++] = 0xF004;
       else if(token=="INP")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
       else if(token=="OUT")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
       else if(token=="SKI")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
@@ -271,6 +272,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
       0xF020:"ROT",
       0xF010:"BTN",
       0xF008:"SLP",
+      0xF004:"RND",
       0x0000:"AND",
       0x1000:"ADD",
       0x2000:"LDA",
@@ -358,6 +360,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
         }break;
         case 0xF010 /* BTN */ : ac=keyValue;break;
         case 0xF008 /* SLP */ : sleep=true;break;
+        case 0xF004 /* RND */ : ac=Math.floor(Math.random()*0x10000);break;
         default: toastr.error("Invalid instruction: " + hex4(op));halt=true;ex3.onCrash();break;
       }
       return 4;
