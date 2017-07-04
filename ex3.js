@@ -29,6 +29,7 @@ ex3.load = (src,macro,log)=>{
   let macros = {};
   macro.split('\n').forEach(l=>{
     let lm = l.match(/^(.*) = ([^=]+)$/);
+    if(!lm)return;
     let lz = [lm[1],lm[2]].map(e=>e.replace(/\t|\r/g," ").replace(/^ */,"").replace(/ *$/,""));
     let m = lz[0].match(/^@([a-zA-Z_][a-zA-Z0-9_]*)(?: |$)/);
     if(m && m[1]){
