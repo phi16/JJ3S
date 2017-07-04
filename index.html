@@ -358,6 +358,12 @@ canvas {
             <b>RND</b>: 0~65535の範囲の乱数をACに格納します。
           </li>
         </ul>
+        ISZ命令はいらないということでMULが追加されました。
+        <ul>
+          <li>
+            <b>MUL</b>: 乗算命令です。ACの値に掛け合わせます。
+          </li>
+        </ul>
         <h2>Macroの使い方</h2>
         サンプル見たらだいたいわかると思う。
         ちなみに左右の区切りは最後の「 = 」です。(空白込み)
@@ -450,7 +456,7 @@ Main,
     LDA _0
     ROT
     @if (py!=maxPY) goto Chara
-    LDA m16
+    LDA m32
     STA px
     STA py
 Chara,
@@ -510,7 +516,7 @@ maxPY, DEC 480
 
 m1,  DEC -1
 m3,  DEC -3
-m16, DEC -16
+m32, DEC -32
 _0,  DEC 0
 _1,  DEC 1
 _2,  DEC 2
@@ -571,7 +577,7 @@ void main(){
     ivec2 p = moves[i].xy;
     if(p.x>0x8000)p.x-=0x10000;
     if(p.y>0x8000)p.y-=0x10000;
-    vec2 relPos = coord-vec2(p);
+    vec2 relPos = (coord-vec2(p))/2.;
     if(0.<=relPos.x && 0.<=relPos.y && relPos.x<16. && relPos.y<16.){
       float sid = float(moves[i].z);
       vec2 sprPos = vec2(mod(sid,8.),floor(mod(sid,64.)/8.))*16.;
@@ -720,7 +726,7 @@ $(_=>{
         ctx.translate(x+8,y+8);
         ctx.rotate(-Math.PI/2*kr);
         ctx.translate(-x-8,-y-8);
-        ctx.drawImage(spriteMap,ki*16,kj*16,16,16,x,y,16,16);
+        ctx.drawImage(spriteMap,ki*16,kj*16,16,16,x,y,32,32);
         ctx.restore();
       }
     };
