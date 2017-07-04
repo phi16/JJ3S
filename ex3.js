@@ -154,7 +154,7 @@ ex3.load = (src,macro,log)=>{
         if(asserts[curAddr]==undefined)asserts[curAddr] = [];
         asserts[curAddr].push({p1:p1,ope:ope,p2:p2});
       }else{
-        const mrefOp = ["AND","ADD","LDA","STA","BUN","BSA","ISZ"];
+        const mrefOp = ["AND","ADD","LDA","STA","BUN","BSA","MUL"];
         let ix = mrefOp.indexOf(token);
         if(ix!=-1){
           let label = yield;
@@ -279,7 +279,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
       0x3000:"STA",
       0x4000:"BUN",
       0x5000:"BSA",
-      0x6000:"ISZ"
+      0x6000:"MUL"
     };
     if((x&0x7000)==0x7000){
       let s = opName[x];
@@ -379,7 +379,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
         case 0x3000 /* STA */ : mem[ar]=ac;break;
         case 0x4000 /* BUN */ : pc=ar;break;
         case 0x5000 /* BSA */ : mem[ar]=pc;pc=ar+1;dur++;break;
-        case 0x6000 /* ISZ */ : {mem[ar]++;mem[ar]&=0xffff;if(mem[ar]==0)pc++;}dur+=2;break;
+        case 0x6000 /* MUL */ : {let t=ac*d;e=!!(t>>16);ac=t&0xffff;}dur++;break;
       }
       return dur;
     }

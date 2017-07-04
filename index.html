@@ -521,7 +521,7 @@ Down,  HEX 4
 Up,    HEX 2
 Right, HEX 1`;
 
-const defaultMacro = `@inc $1 = ISZ $1; CLA
+const defaultMacro = `@inc $1 = LDA $1; INC; STA $1
 @if ($1+$2) goto $3 = LDA $1; ADD $2; SZA; BUN $3
 @if ($1!=$2) goto $3 = LDA $1; CMA; INC; ADD $2; SZA; BUN $3
 @if (AC) goto $1 = SZA; BUN $1

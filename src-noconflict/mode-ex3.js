@@ -5,10 +5,10 @@ var oop = require("../lib/oop");
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 
 var Ex3HighlightRules = function() {
-    var defIns = "AND|ADD|LDA|STA|BUN|BSA|ISZ|CLA|CLE|CMA|CME|CIR|CIL|INC|SPA|SNA|SZA|SZE|HLT";
+    var defIns = "AND|ADD|LDA|STA|BUN|BSA|CLA|CLE|CMA|CME|CIR|CIL|INC|SPA|SNA|SZA|SZE|HLT";
     var valIns = "HEX|DEC|CHR|SYM|ORG|END|I"
-    var depIns = "INP|OUT|SKI|SKO|ION|IOF|SIO|PIO|IMK";
-    var newIns = "SEG|SLX|SLY|WRT|TRX|TRY|ROT|BTN|SLP|RND";
+    var depIns = "INP|OUT|SKI|SKO|ION|IOF|SIO|PIO|IMK|ISZ";
+    var newIns = "SEG|SLX|SLY|WRT|TRX|TRY|ROT|BTN|SLP|RND|MUL";
 
     var keywordMapper = this.createKeywordMapper({
         "support.function": newIns,
