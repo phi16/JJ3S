@@ -306,7 +306,7 @@ canvas {
         <br>
         とりあえずExecuteを押してみよう。
         <h2>描画について</h2>
-        描画できるものとしては、40×30のスプライトマップと5つの動的スプライトになります。
+        描画できるものとしては、40×30のスプライトマップと9つの動的スプライトになります。
         <br>
         各16×16スプライトは対応するCanvasのスプライト番号と回転角度(0~3)の値を持っています。
         <br>
@@ -555,7 +555,7 @@ uniform sampler2D prevFrame;
 uniform sampler2D sprite;
 uniform sampler2D map;
 uniform vec2 resolution;
-uniform ivec3 moves[5];
+uniform ivec3 moves[9];
 uniform int frame1,frame2;
 void main(){
   ivec2 ic = ivec2(coord);
@@ -573,7 +573,7 @@ void main(){
     vec2 realDifPos = (difPos-vec2(8,8))*rotMat+vec2(8,8);
     gl_FragColor = texture2D(sprite,(sprPos+realDifPos)/128.);
   }
-  for(int i=0;i<5;i++){
+  for(int i=0;i<9;i++){
     ivec2 p = moves[i].xy;
     if(p.x>0x8000)p.x-=0x10000;
     if(p.y>0x8000)p.y-=0x10000;
@@ -715,7 +715,7 @@ $(_=>{
           ctx.restore();
         }
       }
-      for(let i=0;i<5;i++){
+      for(let i=0;i<9;i++){
         let x = mvx[i]&0x8000 ? mvx[i]-0x10000 : mvx[i];
         let y = mvy[i]&0x8000 ? mvy[i]-0x10000 : mvy[i];
         let k = mvc[i];
@@ -826,7 +826,7 @@ $(_=>{
       let mapLocation = gl.getUniformLocation(pr,"map");
       gl.uniform1i(mapLocation,1);
       movesLocations = [];
-      for(let i=0;i<5;i++){
+      for(let i=0;i<9;i++){
         movesLocations[i] = gl.getUniformLocation(pr,"moves["+i+"]");
       }
       frame1Location = gl.getUniformLocation(pr,"frame1");
@@ -879,7 +879,7 @@ $(_=>{
         gl.bindTexture(gl.TEXTURE_2D,prevFrameTexs[1-rid]);
         gl.clear(gl.COLOR_BUFFER_BIT);
         mapChanged(map);
-        for(let i=0;i<5;i++){
+        for(let i=0;i<9;i++){
           gl.uniform3i(movesLocations[i],mvx[i],mvy[i],mvc[i]);
         }
         gl.uniform1i(frame1Location,frame1);

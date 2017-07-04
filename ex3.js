@@ -238,7 +238,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
   let movSprC = [];
   let movSprX = [];
   let movSprY = [];
-  for(let i=0;i<5;i++){
+  for(let i=0;i<9;i++){
     movSprC.push(0);
     movSprX.push(0x7fff);
     movSprY.push(0x7fff);
