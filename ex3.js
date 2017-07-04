@@ -334,7 +334,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
         case 0x7100 /* CME */ : e=1-e;break;
         case 0x7080 /* CIR */ : {let t=e;e=ac&1;ac=(ac>>1)|(t<<15);}break;
         case 0x7040 /* CIL */ : {let t=e;e=(ac>>15)&1;ac=0xffff&(ac<<1)|t;}break;
-        case 0x7020 /* INC */ : ac++;break;
+        case 0x7020 /* INC */ : ac++;ac&=0xffff;break;
         case 0x7010 /* SPA */ : {if((ac&0x8000)==0)pc++;}break;
         case 0x7008 /* SNA */ : {if((ac&0x8000))pc++;}break;
         case 0x7004 /* SZA */ : {if(ac==0)pc++;}break;
