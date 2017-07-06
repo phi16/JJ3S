@@ -130,10 +130,9 @@ ex3.load = (src,macro,log)=>{
       else if(token=="WRT")setLine(), buffer[curAddr++] = 0xF100;
       else if(token=="TRX")setLine(), buffer[curAddr++] = 0xF080;
       else if(token=="TRY")setLine(), buffer[curAddr++] = 0xF040;
-      else if(token=="ROT")setLine(), buffer[curAddr++] = 0xF020;
-      else if(token=="BTN")setLine(), buffer[curAddr++] = 0xF010;
-      else if(token=="SLP")setLine(), buffer[curAddr++] = 0xF008;
-      else if(token=="RND")setLine(), buffer[curAddr++] = 0xF004;
+      else if(token=="BTN")setLine(), buffer[curAddr++] = 0xF020;
+      else if(token=="SLP")setLine(), buffer[curAddr++] = 0xF010;
+      else if(token=="RND")setLine(), buffer[curAddr++] = 0xF008;
       else if(token=="INP")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
       else if(token=="OUT")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
       else if(token=="SKI")log("L" + lineNum + ": Deprecated '" + token + "'"),curAddr++,failed = true;
@@ -282,10 +281,9 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
       0xF100:"WRT",
       0xF080:"TRX",
       0xF040:"TRY",
-      0xF020:"ROT",
-      0xF010:"BTN",
-      0xF008:"SLP",
-      0xF004:"RND",
+      0xF020:"BTN",
+      0xF010:"SLP",
+      0xF008:"RND",
       0x0000:"AND",
       0x1000:"ADD",
       0x2000:"LDA",
@@ -358,23 +356,16 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
         case 0xF200 /* SLY */ : sprY=ac;break;
         case 0xF100 /* WRT */ : {
           if(sprX!=0xffff){
-            field[sprY][sprX]=(ac&0x3f)|(field[sprY][sprX]&0xc0);
+            field[sprY][sprX]=ac&0xff;
           }else{
-            movSprC[sprY]=(ac&0x3f)|(movSprC[sprY]&0xc0);
+            movSprC[sprY]=ac&0xff;
           }
         }break;
         case 0xF080 /* TRX */ : movSprX[sprY]=ac;break;
         case 0xF040 /* TRY */ : movSprY[sprY]=ac;break;
-        case 0xF020 /* ROT */ : {
-          if(sprX!=0xffff){
-            field[sprY][sprX]=((ac&0x3)<<6)|(field[sprY][sprX]&0x3f);
-          }else{
-            movSprC[sprY]=((ac&0x3)<<6)|(movSprC[sprY]&0x3f);
-          }
-        }break;
-        case 0xF010 /* BTN */ : ac=keyValue;break;
-        case 0xF008 /* SLP */ : sleep=true;break;
-        case 0xF004 /* RND */ : ac=Math.floor(Math.random()*0x10000);break;
+        case 0xF020 /* BTN */ : ac=keyValue;break;
+        case 0xF010 /* SLP */ : sleep=true;break;
+        case 0xF008 /* RND */ : ac=Math.floor(Math.random()*0x10000);break;
         default: toastr.error("Invalid instruction: " + hex4(op));halt=true;ex3.onCrash();break;
       }
       return 4;
