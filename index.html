@@ -36,7 +36,7 @@ body {
   height: 100vh;
   margin: 0;
 }
-#editor, #macro, #compiled {
+#editor, #macro, #compiledEd {
   margin: 5px 0 0 0;
   width: 100%;
   height: 100%;
@@ -252,6 +252,21 @@ canvas {
   font-size: 15px;
   opacity: 0.6;
 }
+#compiled {
+  width: 100%;
+  height: 100%;
+  background: #222;
+}
+#compiledEd {
+  height: calc(100% - 68px);
+  border-bottom: solid 3px #111;
+}
+#dlMsg {
+  margin-left: 20px;
+  font-size: 20px;
+  color: #ccc;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', 'メイリオ', 'Meiryo UI', 'Rounded M+ 1p', monospace;
+}
     </style>
   </head>
   <body>
@@ -296,7 +311,13 @@ canvas {
         <input type="file" id="file"></input>
       </div>
       <pre id="macro"></pre>
-      <pre id="compiled"></pre>
+      <div id="compiled">
+        <pre id="compiledEd"></pre>
+        <span id="dlMsg">Download</span>
+        <button type="button" id="dlMem">Mem</button>
+        <button type="button" id="dlPrb">Prb</button>
+        <a href="" id="dlCommit" style="display:none"></a>
+      </div>
       <div id="docs">
         <h1>EX3+ Document</h1>
         <h2>コレは何</h2>
@@ -643,7 +664,7 @@ $(_=>{
   macroEditor.setFontSize(20);
   macroEditor.session.setMode("ace/mode/ex3");
   macroEditor.$blockScrolling = Infinity;
-  var compiledEd = ace.edit("compiled");
+  var compiledEd = ace.edit("compiledEd");
   compiledEd.setTheme("ace/theme/monokai");
   compiledEd.setFontSize(20);
   compiledEd.setReadOnly(true);
@@ -1101,6 +1122,26 @@ $(_=>{
   let sizeConf = localStorage.getItem('sizing');
   if(sizeConf=="large"){
     sizingBtn.click();
+  }
+
+  if(1){
+    const mem = document.getElementById("dlMem");
+    const prb = document.getElementById("dlPrb");
+    const commit = document.getElementById("dlCommit");
+    mem.addEventListener("click",_=>{
+      const m = ex3.getMem();
+      const blob = new Blob([m],{"type":"text/plain"});
+      commit.href = window.URL.createObjectURL(blob);
+      commit.download = "main.mem";
+      $("#dlCommit")[0].click();
+    });
+    prb.addEventListener("click",_=>{
+      const p = ex3.getPrb();
+      const blob = new Blob([p],{"type":"text/plain"});
+      commit.href = window.URL.createObjectURL(blob);
+      commit.download = "main.prb";
+      $("#dlCommit")[0].click();
+    })
   }
 });
     </script>

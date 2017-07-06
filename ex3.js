@@ -494,6 +494,28 @@ ex3.onHalt = _=>_;
 ex3.onCrash = _=>_;
 ex3.onBreak = _=>_;
 ex3.onCompiled = _=>_;
+ex3.getMem = _=>{
+  let first = 0;
+  while(buffer[first]==0 && first<4096)first++;
+  let last = 4096-1;
+  while(buffer[last]==0 && last>0)last--;
+  if(first>=last){
+    first = last = 0;
+  }
+  let str = "";
+  for(let i=first;i<=last;i++){
+    str += "@" + hex3(i) + " " + hex4(buffer[i]) + "\n";
+  }
+  return str;
+};
+ex3.getPrb = _=>{
+  let str ="";
+  for(let i=0;i<store.length;i++){
+    str += hex4(store[i].v) + hex4(buffer[store[i].v]) + "\n";
+  }
+  str += "f0000000";
+  return str;
+};
 
 return ex3;
 })();
