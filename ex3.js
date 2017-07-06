@@ -75,9 +75,9 @@ ex3.load = (src,macro,log)=>{
   ex3.onCompiled([].concat.apply([],srcs.map(l=>l.split(";").map(s=>s.replace(/^ */,"").replace(/ *$/,"")))));
   const ls = srcs.join(" \n ").replace(/;/g," ").replace(/,/g," , ").split(" ").filter(x=>x!="");
 
-  buffer = new Array(2048); // 1word x 2048
+  buffer = new Array(4096); // 1word x 4096
   buffer.fill(0);
-  aux = new Array(2048);
+  aux = new Array(4096);
   aux.fill(-1);
   labels = {};
   addrs = {};
@@ -204,6 +204,11 @@ ex3.load = (src,macro,log)=>{
         break;
       }else break;
     }while(1);
+    if(curAddr>=4096){
+      failed = true;
+      log("Memory limit exceeded");
+      break;
+    }
   }
   for(let i=0;i<buffer.length;i++){
     if(buffer[i].delay!==undefined){
