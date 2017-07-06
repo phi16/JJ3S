@@ -637,15 +637,18 @@ $(_=>{
   editor.setTheme("ace/theme/monokai");
   editor.setFontSize(20);
   editor.session.setMode("ace/mode/ex3");
+  editor.$blockScrolling = Infinity;
   var macroEditor = ace.edit("macro");
   macroEditor.setTheme("ace/theme/monokai");
   macroEditor.setFontSize(20);
   macroEditor.session.setMode("ace/mode/ex3");
+  macroEditor.$blockScrolling = Infinity;
   var compiledEd = ace.edit("compiled");
   compiledEd.setTheme("ace/theme/monokai");
   compiledEd.setFontSize(20);
   compiledEd.setReadOnly(true);
   compiledEd.session.setMode("ace/mode/ex3");
+  compiledEd.$blockScrolling = Infinity;
   ex3.onCompiled = srcs=>{
     let ss = srcs
       .map(s=>{
