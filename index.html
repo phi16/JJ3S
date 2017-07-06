@@ -521,7 +521,9 @@ _64, DEC 64
 Left,  HEX 8
 Down,  HEX 4
 Up,    HEX 2
-Right, HEX 1`;
+Right, HEX 1
+
+END`;
 
 const defaultMacro = `@inc $1 = LDA $1; INC; STA $1
 @if ($1+$2) goto $3 = LDA $1; ADD $2; SZA; BUN $3
