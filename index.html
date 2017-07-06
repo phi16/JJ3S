@@ -729,6 +729,7 @@ $(_=>{
     ctx.fillRect(0,0,640,480);
     ctx.imageSmoothingEnabled = false;
     idealRender = (map,mvc,mvx,mvy)=>{
+      ctx.fillRect(0,0,640,480);
       for(let i=0;i<30;i++){
         for(let j=0;j<40;j++){
           let k = map[i][j];
