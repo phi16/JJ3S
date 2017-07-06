@@ -1041,7 +1041,6 @@ $(_=>{
     });
     function loadUrl(url){
       const img = new Image();
-      img.src = url;
       img.onload = _=>{
         if(img.width!=128 || img.height!=128){
           toastr.error("Not supported (invalid size)");
@@ -1058,6 +1057,7 @@ $(_=>{
         }
         imageLoaded();
       };
+      img.src = url;
     }
     function loadImage(f){
       if(!f || !f.type.match('image.*')){
