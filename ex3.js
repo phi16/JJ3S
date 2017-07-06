@@ -2,6 +2,10 @@ const ex3 = (_=>{
 
 const ex3 = {};
 
+function oct3(x){
+  let s = "000" + x.toString(8);
+  return s.slice(s.length-3);
+}
 function hex3(x){
   let s = "0000" + x.toString(16);
   return s.slice(s.length-3);
@@ -95,6 +99,9 @@ ex3.load = (src,macro,log)=>{
       }else if(token=="HEX"){
         const v = parseInt(yield,16);
         setLine(), store.push({hex:1,v:curAddr}), buffer[curAddr++] = v;
+      }else if(token=="OCT"){
+        const v = parseInt(yield,8);
+        setLine(), store.push({oct:1,v:curAddr}), buffer[curAddr++] = v;
       }else if(token=="DEC"){
         const v = (parseInt(yield)+0x10000)%0x10000;
         setLine(), store.push({dec:1,v:curAddr}), buffer[curAddr++] = v;
@@ -311,6 +318,7 @@ ex3.exec = (logDisp,memDisp,lineNum,iRender,aRender)=>{
       if(addrs[ad])str += " (" + addrs[ad].name + ")";
       let vs = "";
       if(store[s].hex)vs = hex4(v);
+      if(store[s].oct)vs = oct3(v);
       if(store[s].dec)vs = v + " (" + hex4(v) + ")";
       if(store[s].chr)vs = "'" + String.fromCharCode(v) + "' (" + hex4(v) + ")";
       if(store[s].sym)vs = hex4(v);

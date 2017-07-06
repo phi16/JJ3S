@@ -649,7 +649,14 @@ $(_=>{
   compiledEd.setReadOnly(true);
   compiledEd.session.setMode("ace/mode/ex3");
   ex3.onCompiled = srcs=>{
-    let ss = srcs.map(s=>s.indexOf(',')!=-1 ? s : s.match(/^\s*$/) ? "" : "    " + s);
+    let ss = srcs
+      .map(s=>{
+        let m = s.match(/^(.*)OCT (\d+)/);
+        if(m){
+          console.log(parseInt(m[2],8).toString(16));
+          return m[1] + "HEX " + parseInt(m[2],8).toString(16);
+        }else return s;
+      }).map(s=>s.indexOf(',')!=-1 ? s : s.match(/^\s*$/) ? "" : "    " + s);
     compiledEd.session.getDocument().setValue(ss.join("\n"));
   };
   function moveLine(ln){
