@@ -5,6 +5,7 @@ import qualified Data.Vector as V
 import Numeric
 import Control.Monad
 import Control.Lens
+import Data.List
 
 hex :: Int -> String
 hex x = let
@@ -23,4 +24,4 @@ main = do
   let pad = replicate ((64-31)*2) '0'
   iforM_ (map (map hex) s' ) $ \i l -> do
     putStr $ "@" ++ hex3 (i*64) ++ " "
-    putStrLn $ concat l
+    putStrLn $ intercalate " " l

@@ -25,5 +25,5 @@ main = do
         img =   convertRGB8 i
         seqs = [ [ [ (px+x*16, py+y*16) | px <- [0..15] ] | py <- [0..15] ] | y <- [0..7], x <- [0..7] ]
         ds = map (map (map (col . uncurry (pixelAt img)))) seqs
-        out = unlines $ map (unlines . map (intersperse '_' . concatMap show)) ds
+        out = unlines $ map (unlines . map (intersperse ' ' . concatMap show)) ds
       in writeFile "sprite.out" out
