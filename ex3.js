@@ -31,6 +31,7 @@ ex3.load = (src,macro,log)=>{
   ex3.halt();
   let failed = false;
   let macros = {};
+  let constants = {};
   const re = /^(.*)\s*\{([\s\S]+?)\}/;
   macro.match(new RegExp(re, "mg")).forEach(l=>{
     let lm = l.match(re)
@@ -45,7 +46,15 @@ ex3.load = (src,macro,log)=>{
     }
   });
   srcs = src.split('\n').map(l=>l.split('/')[0].replace(/\t|\r/g,"").replace(/^ */,"").replace(/ *$/,""));
+  const expand = i => srcs[i] = srcs[i].replace(/%([+-]?(?:\d|[A-Fa-f])+)([HhDdOoBb])/, (_, m1, m2) => {
+    const base = {h: 16, d: 10, o: 8, b: 2}[m2.toLowerCase()];
+    const value = parseInt(m1, base);
+    const label = (value < 0 ? "Cm_" : "Cp_") + Math.abs(value);
+    constants[label] = value;
+    return label;
+  });
   for(let i=0;i<srcs.length;i++){
+    expand(i);
     let m = srcs[i].match(/^@([a-zA-Z_][a-zA-Z0-9_]*)(?: |$)/);
     if(m){
       let mcs = macros[m[1]];
@@ -71,6 +80,10 @@ ex3.load = (src,macro,log)=>{
         srcs[i] = "";
         continue;
       }
+    }
+    expand(i);
+    if(srcs[i].trim() === "END"){
+      srcs[i] = Object.keys(constants).map(k => `${k}, DEC ${constants[k]}`).join(";") + ";END";
     }
   }
   ex3.onCompiled([].concat.apply([],srcs.map(l=>l.split(";").map(s=>s.replace(/^ */,"").replace(/ *$/,"")))));

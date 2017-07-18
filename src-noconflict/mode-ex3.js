@@ -57,6 +57,9 @@ var Ex3HighlightRules = function() {
             token : "constant.numeric",
             regex : "[+-]?(?:\\d|[A-Fa-f])+(?:(?:\\.(?:\\d|[A-Fa-f])*)?(?:[eE][+-]?\\d+)?)?\\b"
         }, {
+            token : "constant.numeric",
+            regex : "%[+-]?(?:\\d|[A-Fa-f])+[HhDdOoBb]\\b"
+        }, {
             token : "text",
             regex : "\\s+"
         } ]

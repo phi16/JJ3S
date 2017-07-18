@@ -384,6 +384,12 @@ canvas {
             <b>MUL</b>: 乗算命令です。ACの値に掛け合わせます。
           </li>
         </ul>
+        <h2>定数</h2>
+        オペランドに定数を指定できます。<br>
+        例: <code>ADD %1111b // AC += 15</code><br>
+        例: <code>ADD %-10o  // AC += -8</code><br>
+        例: <code>ADD %-40d  // AC += -40</code><br>
+        例: <code>ADD %20h   // AC += 32</code><br>
         <h2>Macroの使い方</h2>
         サンプル見たらだいたいわかると思う。
         ちなみに左右の区切りは最後の「 = 」です。(空白込み)
