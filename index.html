@@ -1144,6 +1144,12 @@ const entrypoint = (sharedSource, sharedMacro) => {
       $("#dlCommit")[0].click();
     })
   }
+  
+  if(/share/.test(location.search)){
+    editor.session.getDocument().setValue(sharedSource);
+    macroEditor.session.getDocument().setValue(sharedMacro);
+    loadUrl("res/sprite.png");
+  }
 };
 
 Promise.all([fetch("./source.txt"), fetch("./macro.txt")])
