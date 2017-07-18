@@ -30,29 +30,26 @@ Main,
     LDA PM
     WRT
     BTN
-    AND Left
-    @if (AC) goto moveLeft
-    BTN
-    AND Right
-    @if (AC) goto moveRight
-    BTN
-    AND Up
-    @if (AC) goto moveUp
-    BTN
-    AND Down
-    @if (AC) goto moveDown
+    @ifkey (Left) goto moveLeft
+    @ifkey (Right) goto moveRight
+    @ifkey (Up) goto moveUp
+    @ifkey (Down) goto moveDown
     BUN Done
 moveLeft,
-    @eq px += m3
+    @dec px
+    @chdir PM D_L
     BUN Done
 moveRight,
-    @eq px += _3
+    @inc px
+    @chdir PM D_R
     BUN Done
 moveUp,
-    @eq py += m3
+    @dec py
+    @chdir PM D_U
     BUN Done
 moveDown,
-    @eq py += _3
+    @inc py
+    @chdir PM D_D
     BUN Done
 Done,
     BTN
@@ -60,7 +57,6 @@ Done,
 End,
     SLP
     BSA P_Animation
-    BSA P_dir
     BUN Main
 
 P_Animation, HEX 0
@@ -80,74 +76,8 @@ m_open,
     STA mouth_f
     BUN P_Animation I
 
-//separated tentatively
-P_dir, HEX 0
-    BTN
-    AND Left
-    @if (AC) goto P_toLeft
-    BTN
-    AND Up
-    @if (AC) goto P_toUp
-    BTN
-    AND Down
-    @if (AC) goto P_toDown1
-    BTN
-    AND Right
-    @if (AC) goto P_toRight1
-P_toLeft,
-    @if (PM<DIR1) goto P_dir I
-    LDA DIR1
-    CMA
-    INC
-    ADD PM
-    STA PM
-    BUN P_toLeft
-P_toUp,
-    @if (PM>=DIR3) goto P_dir I
-    LDA DIR1
-    ADD PM
-    STA PM
-    BUN P_toUp
-P_toDown1,
-    LDA PM
-    AND DIR3
-    SZA
-    BUN P_toDown2
-    LDA DIR1
-    ADD PM
-    STA PM
-    BUN P_dir I
-P_toDown2,
-    @if (PM<DIR2) goto P_dir I
-    LDA DIR1
-    CMA
-    INC
-    ADD PM
-    STA PM
-    BUN P_toDown2
-P_toRight1,
-    LDA DIR3
-    CMA
-    INC
-    ADD PM
-    SPA
-    BUN P_toRight2
-    LDA DIR1
-    CMA
-    INC
-    ADD PM
-    STA PM
-    BUN P_dir I
-P_toRight2,
-    @if (PM>=DIR2) goto P_dir I
-    LDA DIR1
-    ADD PM
-    STA PM
-    BUN P_toRight2
-
-px, DEC 352
-py, DEC 208
-t,  DEC 60
+px, DEC 1
+py, DEC 1
 PM, OCT 020
 mouth_f,  DEC 0 //open_state=1, close_state=0
 //unchanged Label_DIR
@@ -173,6 +103,12 @@ Left,  HEX 8
 Down,  HEX 4
 Up,    HEX 2
 Right, HEX 1
+
+D_MSK, OCT 077
+D_L,   OCT 000
+D_D,   OCT 100
+D_R,   OCT 200
+D_U,   OCT 300
 
 P, SYM Array
 
