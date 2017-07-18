@@ -548,15 +548,60 @@ Right, HEX 1
 
 END`;
 
-const defaultMacro = `@inc $1 = LDA $1; INC; STA $1
-@if ($1+$2) goto $3 = LDA $1; ADD $2; SZA; BUN $3
-@if ($1!=$2) goto $3 = LDA $1; CMA; INC; ADD $2; SZA; BUN $3
-@if (AC) goto $1 = SZA; BUN $1
-@if ($1) goto $2 = LDA $1; SZA; BUN $2
-@if ($1>=$2) goto $3 = LDA $2; CMA; INC; ADD $1; SPA; BUN $3
-@if ($1<$2) goto $3 = LDA $2; CMA; INC; ADD $1; SNA; BUN $3
-@eq $1 = $2 + $3 = LDA $2; ADD $3; STA $1
-@eq $1 += $2 = LDA $1; ADD $2; STA $1`;
+const defaultMacro = `@inc $1 {
+  LDA $1
+  INC
+  STA $1
+}
+@if ($1+$2) goto $3 {
+  LDA $1
+  ADD $2
+  SZA
+  BUN $3
+}
+@if ($1!=$2) goto $3 {
+  LDA $1
+  CMA
+  INC
+  ADD $2
+  SZA
+  BUN $3
+}
+@if (AC) goto $1 {
+  SZA
+  BUN $1
+}
+@if ($1) goto $2 {
+  LDA $1
+  SZA
+  BUN $2
+}
+@if ($1>=$2) goto $3 {
+  LDA $2
+  CMA
+  INC
+  ADD $1
+  SPA
+  BUN $3
+}
+@if ($1<$2) goto $3 {
+  LDA $2
+  CMA
+  INC
+  ADD $1
+  SNA
+  BUN $3
+}
+@eq $1 = $2 + $3 {
+  LDA $2
+  ADD $3
+  STA $1
+}
+@eq $1 += $2 {
+  LDA $1
+  ADD $2
+  STA $1
+}`;
 
 const vShader = `
 precision mediump float;
