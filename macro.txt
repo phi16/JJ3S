@@ -31,7 +31,7 @@
   CMA
   INC
   ADD $1
-  SPA
+  SNA
   BUN $3
 }
 @if ($1<$2) goto $3 {
@@ -39,7 +39,7 @@
   CMA
   INC
   ADD $1
-  SNA
+  SPA
   BUN $3
 }
 @eq $1 = $2 + $3 {
@@ -54,21 +54,21 @@
 }
 
 @dec $1 {
-    LDA $1
-    CMA
-    INC
-    CMA
-    STA $1
+  LDA $1
+  CMA
+  INC
+  CMA
+  STA $1
 }
 @ifkey ($1) goto $2 {
-	BTN
-	AND $1
-	SZA
-	BUN $2
+  BTN
+  AND $1
+  SZA
+  BUN $2
 }
 @chdir $1 $2 {
-	LDA $1
-	AND D_MSK
-	ADD $2
-	STA $1
+  LDA $1
+  AND D_MSK
+  ADD $2
+  STA $1
 }
