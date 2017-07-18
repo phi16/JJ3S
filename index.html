@@ -631,7 +631,7 @@ void main(){
 `;
 
 let vim,emacs;
-$(_=>{
+const entrypoint = (sharedSource, sharedMacro) => {
   $("#tab").tabs();
   $("#screens").tabs();
   const logElem = document.getElementById("log");
@@ -1144,7 +1144,12 @@ $(_=>{
       $("#dlCommit")[0].click();
     })
   }
-});
+};
+
+Promise.all([fetch("./source.txt"), fetch("./macro.txt")])
+.then(resp => Promise.all(resp.map(item => item.text())))
+.then(data => entrypoint(...data));
+
     </script>
   </body>
 </html>
