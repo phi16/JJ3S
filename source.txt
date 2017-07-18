@@ -1,17 +1,23 @@
     ORG 10
+    
 LoopY,
     CLA
     STA X
-    @inc P
+    
 LoopX,
     LDA X
     SLX
     LDA Y
     SLY
-    LDA P I
+    
+    MUL W
+    ADD X
+    ADD P
+    STA tmp
+    
+    LDA tmp I
     WRT
-
-    @inc P
+    
     @inc X
     @if (X<W) goto LoopX
 
@@ -19,9 +25,9 @@ LoopX,
     @if (Y<H) goto LoopY
 
 Main,
-    LDA m1
+    LDA %-1d
     SLX
-    LDA _1
+    LDA %1d
     SLY
     LDA px
     TRX
@@ -29,27 +35,27 @@ Main,
     TRY
     LDA PM
     WRT
-    BTN
-    @ifkey (Left) goto moveLeft
-    @ifkey (Right) goto moveRight
-    @ifkey (Up) goto moveUp
-    @ifkey (Down) goto moveDown
+    
+    @key move Left
+    @key move Right
+    @key move Up
+    @key move Down
     BUN Done
 moveLeft,
     @dec px
-    @chdir PM D_L
+    @chdir PM Left
     BUN Done
 moveRight,
     @inc px
-    @chdir PM D_R
+    @chdir PM Right
     BUN Done
 moveUp,
     @dec py
-    @chdir PM D_U
+    @chdir PM Up
     BUN Done
 moveDown,
     @inc py
-    @chdir PM D_D
+    @chdir PM Down
     BUN Done
 Done,
     BTN
@@ -60,59 +66,49 @@ End,
     BUN Main
 
 P_Animation, HEX 0
-    @if (mouth_f>=_0) goto m_open
+    @if (mouth_f>=%0d) goto m_open
 m_close,
     @dec PM
     @inc mouth_f
-    @if (mouth_f!=_0) goto Main
+    @if (mouth_f!=%0d) goto Main
     BUN P_Animation I
 m_open,
     @inc PM
     @inc mouth_f
-    @if (mouth_f!=_2) goto Main
+    @if (mouth_f!=%2d) goto Main
     LDA mouth_f
     CMA
     INC
     STA mouth_f
     BUN P_Animation I
 
-px, DEC 1
-py, DEC 1
+tmp, DEC 0
+
+px, DEC 8
+py, DEC 8
 PM, OCT 020
+
 mouth_f,  DEC 0 //open_state=1, close_state=0
-//unchanged Label_DIR
-DIR1, OCT 100
-DIR2, OCT 200
-DIR3, OCT 300
 
 X,  DEC 0
 Y,  DEC 0
-W,  DEC 31
-H,  DEC 30
-maxPY, DEC 480
-
-m1,  DEC -1
-m3,  DEC -3
-m32, DEC -32
-_0,  DEC 0
-_1,  DEC 1
-_2,  DEC 2
-_3,  DEC 3
+W,  DEC 32
+H,  DEC 28
 
 Left,  HEX 8
 Down,  HEX 4
 Up,    HEX 2
 Right, HEX 1
 
-D_MSK, OCT 077
-D_L,   OCT 000
-D_D,   OCT 100
-D_R,   OCT 200
-D_U,   OCT 300
+dirLeft,  OCT 000
+dirDown,  OCT 100
+dirRight, OCT 200
+dirUp,    OCT 300
 
 P, SYM Array
 
-Array, HEX 0; OCT 102;OCT 303;OCT 303;OCT 303;OCT 303;OCT 303;OCT 303;OCT 303;OCT 303;OCT 002;OCT 000;OCT 000;OCT 000;OCT 003;OCT 000;OCT 203;OCT 000;OCT 000;OCT 000;OCT 102;OCT 303;OCT 303;OCT 303;OCT 303;OCT 002;OCT 102;OCT 303;OCT 303;OCT 303;OCT 303;OCT 002;HEX 0
+Array,
+OCT 102;OCT 303;OCT 303;OCT 303;OCT 303;OCT 303;OCT 303;OCT 303;OCT 303;OCT 002;OCT 000;OCT 000;OCT 000;OCT 003;OCT 000;OCT 203;OCT 000;OCT 000;OCT 000;OCT 102;OCT 303;OCT 303;OCT 303;OCT 303;OCT 002;OCT 102;OCT 303;OCT 303;OCT 303;OCT 303;OCT 002;HEX 0
 OCT 003;OCT 004;OCT 004;OCT 005;OCT 004;OCT 004;OCT 004;OCT 004;OCT 004;OCT 203;OCT 000;OCT 000;OCT 000;OCT 003;OCT 000;OCT 203;OCT 000;OCT 000;OCT 000;OCT 003;OCT 004;OCT 004;OCT 004;OCT 005;OCT 203;OCT 003;OCT 004;OCT 004;OCT 004;OCT 004;OCT 203;HEX 0
 OCT 003;OCT 004;OCT 101;OCT 103;OCT 001;OCT 004;OCT 101;OCT 001;OCT 004;OCT 203;OCT 000;OCT 000;OCT 000;OCT 003;OCT 000;OCT 203;OCT 000;OCT 000;OCT 000;OCT 003;OCT 004;OCT 101;OCT 001;OCT 004;OCT 201;OCT 301;OCT 004;OCT 101;OCT 001;OCT 004;OCT 203;HEX 0
 OCT 003;OCT 004;OCT 203;OCT 000;OCT 003;OCT 004;OCT 203;OCT 003;OCT 004;OCT 203;OCT 000;OCT 000;OCT 000;OCT 003;OCT 000;OCT 203;OCT 000;OCT 000;OCT 000;OCT 003;OCT 004;OCT 203;OCT 003;OCT 004;OCT 004;OCT 004;OCT 004;OCT 203;OCT 003;OCT 004;OCT 203;HEX 0

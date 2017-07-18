@@ -3,6 +3,13 @@
   INC
   STA $1
 }
+@dec $1 {
+  LDA $1
+  CMA
+  INC
+  CMA
+  STA $1
+}
 @if ($1+$2) goto $3 {
   LDA $1
   ADD $2
@@ -53,22 +60,15 @@
   STA $1
 }
 
-@dec $1 {
-  LDA $1
-  CMA
-  INC
-  CMA
-  STA $1
-}
-@ifkey ($1) goto $2 {
+@key $1 $2 {
   BTN
-  AND $1
+  AND $2
   SZA
-  BUN $2
+  BUN $1$2
 }
 @chdir $1 $2 {
   LDA $1
-  AND D_MSK
-  ADD $2
+  AND %077o
+  ADD dir$2
   STA $1
 }
