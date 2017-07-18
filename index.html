@@ -754,9 +754,9 @@ const entrypoint = (sharedSource, sharedMacro) => {
         let kj = Math.floor((k&0x3f)/8);
         let kr = (mvc[i]&0xc0)/0x40;
         ctx.save();
-        ctx.translate(x+8,y+8);
+        ctx.translate(x+16,y+16);
         ctx.rotate(-Math.PI/2*kr);
-        ctx.translate(-x-8,-y-8);
+        ctx.translate(-x-16,-y-16);
         ctx.drawImage(spriteMap,ki*16,kj*16,16,16,x,y,32,32);
         ctx.restore();
       }
@@ -1146,7 +1146,7 @@ const entrypoint = (sharedSource, sharedMacro) => {
       $("#dlCommit")[0].click();
     })
   }
-  
+
   if(/share/.test(location.search)){
     editor.session.getDocument().setValue(sharedSource);
     macroEditor.session.getDocument().setValue(sharedMacro);
