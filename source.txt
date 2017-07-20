@@ -25,17 +25,10 @@ LoopX,
     @if (Y<H) goto LoopY
 
 Main,
-    LDA %-1d
-    SLX
-    LDA %1d
-    SLY
-    LDA px
-    TRX
-    LDA py
-    TRY
-    LDA PM
-    WRT
+    BSA Enemy1
     
+    @drwspr %0d px py PM
+
     @key move Left
     @key move Right
     @key move Up
@@ -81,12 +74,70 @@ m_open,
     INC
     STA mouth_f
     BUN P_Animation I
+    
+//no branch yet
+Death_anime,
+    @drwspr %0d px py PM
+    AND %300o
+    ADD PM_Death
+    WRT
+    @_3SLPs
+    @inc PM_Death
+    WRT
+    @_3SLPs
+    @inc PM_Death
+    WRT
+    @_3SLPs
+    @inc PM_Death
+    WRT
+    @_3SLPs
+    @inc PM_Death
+    WRT
+    @_3SLPs
+    @inc PM_Death
+    WRT
+    @_3SLPs
+    @inc PM_Death
+    WRT
+    @_3SLPs
+    @inc PM_Death
+    WRT
+    HLT
+    
+Enemy1, HEX 0
+    @drwspr %1d e1x e1y E1
+    @drwspr %2d e1x e1y E_eye
+Enemy2,
+    @drwspr %3d e2x e2y E2
+    @drwspr %4d e2x e2y E_eye
+Enemy3,
+    @drwspr %5d e3x e3y E3
+    @drwspr %6d e3x e3y E_eye
+Enemy4,
+    @drwspr %7d e4x e4y E4
+    @drwspr %8d e4x e4y E_eye
+    BUN Enemy1 I
 
 tmp, DEC 0
 
 px, DEC 8
 py, DEC 8
 PM, OCT 020
+PM_Death, OCT 030
+
+E_eye, OCT 060
+e1x, DEC 168
+e1y, DEC 208
+E1,  OCT 070
+e2x, DEC 216
+e2y, DEC 176
+E2,  OCT 072
+e3x, DEC 216
+e3y, DEC 208
+E3,  OCT 074
+e4x, DEC 216
+e4y, DEC 240
+E4,  OCT 076
 
 mouth_f,  DEC 0 //open_state=1, close_state=0
 

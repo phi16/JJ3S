@@ -30,6 +30,38 @@
 }
 @if ($1) goto $2 {
   LDA $1
+@inc $1 {
+  LDA $1
+  INC
+  STA $1
+}
+@dec $1 {
+  LDA $1
+  CMA
+  INC
+  CMA
+  STA $1
+}
+@if ($1+$2) goto $3 {
+  LDA $1
+  ADD $2
+  SZA
+  BUN $3
+}
+@if ($1!=$2) goto $3 {
+  LDA $1
+  CMA
+  INC
+  ADD $2
+  SZA
+  BUN $3
+}
+@if (AC) goto $1 {
+  SZA
+  BUN $1
+}
+@if ($1) goto $2 {
+  LDA $1
   SZA
   BUN $2
 }
@@ -71,4 +103,21 @@
   AND %077o
   ADD dir$2
   STA $1
+}
+@drwspr $1 $2 $3 $4 {
+  LDA %-1d
+  SLX
+  LDA $1
+  SLY
+  LDA $2
+  TRX
+  LDA $3
+  TRY
+  LDA $4
+  WRT
+}
+@_3SLPs {
+  SLP
+  SLP
+  SLP
 }
