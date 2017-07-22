@@ -17,9 +17,9 @@ int main(){
       if(m[i][j]=='_' || m[i][j]=='$'){
         ofs << "OCT 000;";
       }else if(m[i][j]=='.'){
-        ofs << "OCT 004;";
+        ofs << "OCT 001;";
       }else if(m[i][j]=='O'){
-        ofs << "OCT 005;";
+        ofs << "OCT 002;";
       }else if(m[i][j]=='='){
         ofs << "OCT 111;";
       }else if(m[i][j]=='#'){
@@ -28,24 +28,24 @@ int main(){
         bool u = i==0  ? true : m[i-1][j]=='#';
         bool d = i==27 ? true : m[i+1][j]=='#';
         if(0);
-        else if(l&&!r&&u&&d)ofs << "OCT 003;";
-        else if(l&&r&&!u&&d)ofs << "OCT 103;";
-        else if(!l&&r&&u&&d)ofs << "OCT 203;";
-        else if(l&&r&&u&&!d)ofs << "OCT 303;";
-        else if(l&&!r&&!u&&d)ofs << "OCT 001;";
-        else if(!l&&r&&!u&&d)ofs << "OCT 101;";
-        else if(!l&&r&&u&&!d)ofs << "OCT 201;";
-        else if(l&&!r&&u&&!d)ofs << "OCT 301;";
+        else if(l&&!r&&u&&d)ofs << "OCT 015;";
+        else if(l&&r&&!u&&d)ofs << "OCT 115;";
+        else if(!l&&r&&u&&d)ofs << "OCT 215;";
+        else if(l&&r&&u&&!d)ofs << "OCT 315;";
+        else if(l&&!r&&!u&&d)ofs << "OCT 013;";
+        else if(!l&&r&&!u&&d)ofs << "OCT 113;";
+        else if(!l&&r&&u&&!d)ofs << "OCT 213;";
+        else if(l&&!r&&u&&!d)ofs << "OCT 313;";
         else if(l&&r&&u&&d){
           bool ul = j==0  || i==0  ? true : m[i-1][j-1]=='#';
           bool ur = j==30 || i==0  ? true : m[i-1][j+1]=='#';
           bool dl = j==0  || i==27 ? true : m[i+1][j-1]=='#';
           bool dr = j==30 || i==27 ? true : m[i+1][j+1]=='#';
           if(0);
-          else if(!dl)ofs << "OCT 002;";
-          else if(!dr)ofs << "OCT 102;";
-          else if(!ur)ofs << "OCT 202;";
-          else if(!ul)ofs << "OCT 302;";
+          else if(!dl)ofs << "OCT 014;";
+          else if(!dr)ofs << "OCT 114;";
+          else if(!ur)ofs << "OCT 214;";
+          else if(!ul)ofs << "OCT 314;";
           else ofs << "OCT 000;";
         }else{
           ofs << "OCT 077;";
@@ -64,14 +64,14 @@ int main(){
         if(0);
         else if(gu)ofs << "OCT 112;";
         else if(gd)ofs << "OCT 110;";
-        else if(l)ofs << "OCT 006;";
-        else if(d)ofs << "OCT 106;";
-        else if(r)ofs << "OCT 206;";
-        else if(u)ofs << "OCT 306;";
-        else if(dl)ofs << "OCT 007;";
-        else if(dr)ofs << "OCT 107;";
-        else if(ur)ofs << "OCT 207;";
-        else if(ul)ofs << "OCT 307;";
+        else if(l)ofs << "OCT 016;";
+        else if(d)ofs << "OCT 116;";
+        else if(r)ofs << "OCT 216;";
+        else if(u)ofs << "OCT 316;";
+        else if(dl)ofs << "OCT 017;";
+        else if(dr)ofs << "OCT 117;";
+        else if(ur)ofs << "OCT 217;";
+        else if(ul)ofs << "OCT 317;";
         else ofs << "OCT 000;";
       }else{
         std::cerr << "[Unknown:" << m[i][j] << "]" << std::endl;
