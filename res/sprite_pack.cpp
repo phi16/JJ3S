@@ -21,11 +21,33 @@ void pack(std::vector<int> &v, int val, int bit){
 int main(){
   std::ifstream ifs("sprite.out");
   std::vector<int> addr;
-  std::vector<int> palette;
-  std::vector<int> content;
-  int acc = 0;
+  std::vector<int> palette05, palette;
+  std::vector<int> content05, content1, content2, content4;
+  int acc1 = 0, acc2 = 0, acc4 = 0;
   int pal = 0;
-  for(int i=0;i<64;i++){
+  for(int i=0;i<32;i++){
+    std::vector<int> p(256);
+    std::vector<int> cnt(16);
+    for(int j=0;j<256;j++){
+      ifs >> std::hex >> p[j];
+      cnt[p[j]]++;
+    }
+    int k=0;
+    for(int j=0;j<16;j++){
+      if(cnt[j] && j!=8){
+        pack(palette05,j,4);
+        k++;
+      }
+    }
+    if(k==0)pack(palette05,8,4); // all blank
+
+    for(int j=0;j<64;j++){
+      int po = p[(j%8)*2 + (j/8)*2*16];
+      pack(content05,po==8,1);
+    }
+  }
+  for(int i=0;i<32;i++){
+    int palIni = pal;
     std::vector<int> p(256);
     std::vector<int> cnt(16);
     int pat = 0;
@@ -51,30 +73,76 @@ int main(){
       l++;
     }
     pack(addr,l,3);   // 0~4
-    pack(addr,pal,8); // 160
-    pack(addr,acc,7); // 79
-    for(int j=0;j<256;j++){
-      int v = lookup[p[j]];
-      pack(content,v,l);
+    pack(addr,palIni,7); // 160
+    if(l==0){
+      pack(addr,0,6); // constant
+    }else if(l==1){
+      pack(addr,acc1,6);
+      for(int j=0;j<256;j++){
+        int v = lookup[p[j]];
+        pack(content1,v,l);
+      }
+      acc1++;
+    }else if(l==2){
+      pack(addr,acc2,6);
+      for(int j=0;j<256;j++){
+        int v = lookup[p[j]];
+        pack(content2,v,l);
+      }
+      acc2++;
+    }else if(l==4){
+      pack(addr,acc4,6);
+      for(int j=0;j<256;j++){
+        int v = lookup[p[j]];
+        pack(content4,v,l);
+      }
+      acc4++;
+    }else{
+      std::cout << "po" << std::endl;
+      return 1;
     }
-    acc += l;
   }
   std::ofstream addro("address.out");
+  std::ofstream pal05o("palette05.out");
   std::ofstream palo("palette.out");
-  std::ofstream conto("content.out");
+  std::ofstream cont05o("content05.out");
+  std::ofstream cont1o("content1.out");
+  std::ofstream cont2o("content2.out");
+  std::ofstream cont4o("content4.out");
   for(int i=0;i<addr.size();i++){
     addro << addr[i];
-    if(i%18==17)addro << std::endl;
+    if(i%16==15)addro << std::endl;
   }
-  std::cout << "address/18 : " << addr.size()/18 << std::endl;
+  std::cout << "address/16 : " << addr.size()/16 << std::endl;
+  for(int i=0;i<palette05.size();i++){
+    pal05o << palette05[i];
+    if(i%4==3)pal05o << std::endl;
+  }
+  std::cout << "palette05/4  : " << palette05.size()/4 << std::endl;
   for(int i=0;i<palette.size();i++){
     palo << palette[i];
     if(i%4==3)palo << std::endl;
   }
   std::cout << "palette/4  : " << palette.size()/4 << std::endl;
-  for(int i=0;i<content.size();i++){
-    conto << content[i] << " ";
-    if(i%256==255)conto << std::endl;
+  for(int i=0;i<content05.size();i++){
+    cont05o << content05[i];
   }
-  std::cout << "content    : " << content.size() << std::endl;
+  cont05o << std::endl;
+  std::cout << "content05   : " << content05.size() << std::endl;
+  for(int i=0;i<content1.size();i++){
+    cont1o << content1[i];
+  }
+  cont1o << std::endl;
+  std::cout << "content1   : " << content1.size() << std::endl;
+  for(int i=0;i<content2.size();i+=2){
+    cont2o << content2[i] << content2[i+1] << " ";
+    if(i%32==30)cont2o << std::endl;
+  }
+  std::cout << "content2   : " << content2.size() << std::endl;
+  for(int i=0;i<content4.size();i+=4){
+    cont4o << content4[i] << content4[i+1] << content4[i+2] << content4[i+3] << " ";
+    if(i%64==60)cont4o << std::endl;
+  }
+  std::cout << "content4   : " << content4.size() << std::endl;
+  std::cout << "Acc = " << acc1 << "," << acc2 << "," << acc4 << std::endl;
 }
